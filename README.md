@@ -6,8 +6,8 @@ Aplikasi manajemen surat masuk dan keluar berbasis web dengan Java Spring Boot (
 
 ```
 .
-├── aplikasi-berkas-backend/   # Spring Boot backend
-└── aplikasi-berkas-frontend/  # React frontend
+├── app-mail/   # Spring Boot backend
+└── app-mail/  # React frontend
 ```
 
 ## Tech Stack
@@ -53,7 +53,7 @@ Aplikasi manajemen surat masuk dan keluar berbasis web dengan Java Spring Boot (
 ### 1. Backend Setup
 
 ```bash
-cd aplikasi-berkas-backend
+cd app-mail/backend
 
 # Run dengan H2 in-memory database
 mvn spring-boot:run
@@ -68,7 +68,7 @@ Default credentials:
 ### 2. Frontend Setup
 
 ```bash
-cd aplikasi-berkas-frontend
+cd app-mail/frontend
 
 # Install dependencies
 npm install
@@ -92,25 +92,15 @@ Login dengan:
 ### Backend (Port 8080)
 
 ```bash
-cd aplikasi-berkas-backend
+cd app-mail/backend
 
 # Run
 mvn spring-boot:run
 
-# Build JAR
-mvn clean package
-
-# Run JAR
-java -jar target/aplikasi-berkas-backend-1.0.0.jar
-
-# H2 Console (dev only)
-http://localhost:8080/api/h2-console
-```
-
 ### Frontend (Port 5173)
 
 ```bash
-cd aplikasi-berkas-frontend
+cd app-mail/frontend
 
 # Install dependencies
 npm install
@@ -151,7 +141,7 @@ mvn spring-boot:run
 ### Frontend Production Build
 
 ```bash
-cd aplikasi-berkas-frontend
+cd app-mail/frontend
 npm run build
 ```
 
