@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { SuratMasukList } from './pages/SuratMasukList';
 import { SuratKeluarList } from './pages/SuratKeluarList';
+import { AuditLog } from './pages/AuditLog';
 import { LoginPage } from './pages/LoginPage';
 
 function App() {
@@ -34,6 +35,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout><SuratKeluarList /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-log"
+            element={
+              <ProtectedRoute>
+                <Layout><AuditLog /></Layout>
               </ProtectedRoute>
             }
           />

@@ -92,3 +92,22 @@ export interface MonthData {
   suratMasuk: number;
   suratKeluar: number;
 }
+
+export interface PaginatedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  size: number;
+}
+
+export interface AuditLog {
+  id: number;
+  action: string;
+  entityType: string;
+  entityId: number;
+  entityLabel: string;
+  details: string;
+  actor: string;
+  timestamp: string;
+}

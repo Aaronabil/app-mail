@@ -95,7 +95,7 @@ export function Dashboard() {
     },
   ].filter((d) => d.count > 0);
 
-  const totalPie = pieData.reduce((sum, d) => sum + d.count, 0);
+  const totalPie = pieData.reduce((sum, d) => sum + d.count, 0);  
 
   const statCards = [
     {
