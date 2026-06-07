@@ -7,6 +7,7 @@ import {
   DashboardStats,
   FilterParams,
   MonthlyChartData,
+  PaginatedResponse,
 } from '@/types';
 
 export const suratService = {
@@ -22,8 +23,8 @@ export const suratService = {
   },
 
   // Surat Masuk
-  getSuratMasuk: async (params?: FilterParams): Promise<SuratMasuk[]> => {
-    const response = await api.get<SuratMasuk[]>('/surat-masuk', { params });
+  getSuratMasuk: async (params?: FilterParams & { page?: number; size?: number }): Promise<PaginatedResponse<SuratMasuk>> => {
+    const response = await api.get<PaginatedResponse<SuratMasuk>>('/surat-masuk', { params });
     return response.data;
   },
 
@@ -106,5 +107,10 @@ export const suratService = {
       responseType: 'blob',
     });
     return response.data;
+  },
+
+  // Alias for convenience
+  downloadPdf: async (id: number): Promise<Blob> => {
+    return suratService.exportSuratMasukPdf(id);
   },
 };

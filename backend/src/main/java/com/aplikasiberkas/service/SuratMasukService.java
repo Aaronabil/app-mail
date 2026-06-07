@@ -7,13 +7,18 @@ import com.aplikasiberkas.entity.User;
 import com.aplikasiberkas.repository.SuratMasukRepository;
 import com.aplikasiberkas.util.NomorSuratGenerator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,25 +27,34 @@ public class SuratMasukService {
 
     private final SuratMasukRepository repository;
     private final NomorSuratGenerator nomorSuratGenerator;
+    private final AuditLogService auditLogService;
+
+    private String getCurrentUser() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            return auth.getName();
+        }
+        return "System";
+    }
 
     @Transactional(readOnly = true)
-    public List<SuratMasukResponse> getAll(String status, LocalDate startDate, 
-            LocalDate endDate, String search, String sortBy, String sortDir) {
-        
+    public Map<String, Object> getAll(String status, LocalDate startDate,
+            LocalDate endDate, String search, String sortBy, String sortDir, int page, int size) {
+
         Specification<SuratMasuk> spec = Specification.where(null);
 
         if (status != null && !status.isEmpty()) {
-            spec = spec.and((root, query, cb) -> 
+            spec = spec.and((root, query, cb) ->
                 cb.equal(root.get("status"), status));
         }
 
         if (startDate != null && endDate != null) {
-            spec = spec.and((root, query, cb) -> 
+            spec = spec.and((root, query, cb) ->
                 cb.between(root.get("tanggal"), startDate, endDate));
         }
 
         if (search != null && !search.isEmpty()) {
-            spec = spec.and((root, query, cb) -> 
+            spec = spec.and((root, query, cb) ->
                 cb.or(
                     cb.like(cb.lower(root.get("nomorSurat")), "%" + search.toLowerCase() + "%"),
                     cb.like(cb.lower(root.get("pengirim")), "%" + search.toLowerCase() + "%"),
@@ -48,12 +62,24 @@ public class SuratMasukService {
                 ));
         }
 
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDir != null ? sortDir : "DESC"), 
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir != null ? sortDir : "DESC"),
                 sortBy != null ? sortBy : "tanggal");
 
-        return repository.findAll(spec, sort).stream()
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<SuratMasuk> pageResult = repository.findAll(spec, pageable);
+
+        List<SuratMasukResponse> content = pageResult.getContent().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("content", content);
+        response.put("totalElements", pageResult.getTotalElements());
+        response.put("totalPages", pageResult.getTotalPages());
+        response.put("currentPage", pageResult.getNumber());
+        response.put("size", pageResult.getSize());
+
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -66,13 +92,13 @@ public class SuratMasukService {
     @Transactional
     public SuratMasukResponse create(SuratMasukRequest request, User user) {
         SuratMasuk surat = new SuratMasuk();
-        
+
         if (request.getNomorSurat() == null || request.getNomorSurat().isEmpty()) {
             surat.setNomorSurat(nomorSuratGenerator.generateNomorSuratMasuk());
         } else {
             surat.setNomorSurat(request.getNomorSurat());
         }
-        
+
         surat.setTanggal(request.getTanggal());
         surat.setPengirim(request.getPengirim());
         surat.setPerihal(request.getPerihal());
@@ -80,13 +106,28 @@ public class SuratMasukService {
         surat.setStatus(request.getStatus() != null ? request.getStatus() : "RECEIVED");
         surat.setCreatedBy(user);
 
-        return toResponse(repository.save(surat));
+        SuratMasukResponse saved = toResponse(repository.save(surat));
+
+        String oldStatus = null;
+        String newStatus = saved.getStatus();
+        String detail;
+        if (oldStatus == null) {
+            detail = "Menambah surat masuk baru (" + saved.getPerihal() + ").";
+        } else {
+            detail = "Membuat surat masuk dengan status " + newStatus + ".";
+        }
+        auditLogService.createLog("CREATE", "Surat Masuk", saved.getId(),
+                saved.getNomorSurat(), detail, getCurrentUser());
+
+        return saved;
     }
 
     @Transactional
     public SuratMasukResponse update(Long id, SuratMasukRequest request) {
         SuratMasuk surat = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Surat not found"));
+
+        String oldStatus = surat.getStatus();
 
         surat.setNomorSurat(request.getNomorSurat());
         surat.setTanggal(request.getTanggal());
@@ -95,12 +136,28 @@ public class SuratMasukService {
         surat.setIsiSingkat(request.getIsiSingkat());
         surat.setStatus(request.getStatus());
 
-        return toResponse(repository.save(surat));
+        SuratMasukResponse updated = toResponse(repository.save(surat));
+
+        String detail;
+        if (!oldStatus.equals(updated.getStatus())) {
+            detail = "Mengubah status dari " + oldStatus + " ke " + updated.getStatus() + ".";
+        } else {
+            detail = "Mengubah data surat masuk (" + updated.getPerihal() + ").";
+        }
+        auditLogService.createLog("UPDATE", "Surat Masuk", updated.getId(),
+                updated.getNomorSurat(), detail, getCurrentUser());
+
+        return updated;
     }
 
     @Transactional
     public void delete(Long id) {
+        SuratMasuk surat = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Surat not found"));
+        String nomor = surat.getNomorSurat();
         repository.deleteById(id);
+        auditLogService.createLog("DELETE", "Surat Masuk", id,
+                nomor, "Menghapus surat masuk " + nomor + ".", getCurrentUser());
     }
 
     @Transactional

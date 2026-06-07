@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/surat-masuk")
@@ -23,16 +24,17 @@ public class SuratMasukController {
     private final AuthService authService;
 
     @GetMapping
-    public ResponseEntity<List<SuratMasukResponse>> getAll(
+    public ResponseEntity<Map<String, Object>> getAll(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "tanggal") String sortBy,
-            @RequestParam(required = false, defaultValue = "DESC") String sortDir) {
+            @RequestParam(required = false, defaultValue = "DESC") String sortDir,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "10") int size) {
         
-        List<SuratMasukResponse> result = service.getAll(status, startDate, endDate, search, sortBy, sortDir);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(service.getAll(status, startDate, endDate, search, sortBy, sortDir, page, size));
     }
 
     @GetMapping("/{id}")
