@@ -6,13 +6,18 @@ import com.aplikasiberkas.entity.User;
 import com.aplikasiberkas.service.AuthService;
 import com.aplikasiberkas.service.SuratKeluarService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/surat-keluar")
@@ -47,6 +52,28 @@ public class SuratKeluarController {
         
         User user = authService.getCurrentUser(authentication.getName());
         return ResponseEntity.ok(service.create(request, user));
+    }
+
+    @PostMapping(path = "/{id}/attachment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SuratKeluarResponse> uploadAttachment(
+            @PathVariable Long id,
+            @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(service.uploadAttachment(id, file));
+    }
+
+    @GetMapping("/{id}/attachment")
+    public ResponseEntity<Resource> downloadAttachment(@PathVariable Long id) {
+        SuratKeluarResponse surat = service.getById(id);
+        if (surat.getFilePath() == null || surat.getFilePath().isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Resource resource = service.loadAttachment(surat.getFilePath());
+        String fileName = Paths.get(surat.getFilePath()).getFileName().toString();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .body(resource);
     }
 
     @PutMapping("/{id}")
