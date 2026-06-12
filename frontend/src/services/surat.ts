@@ -33,8 +33,14 @@ export const suratService = {
     return response.data;
   },
 
-  createSuratMasuk: async (data: SuratMasukRequest): Promise<SuratMasuk> => {
-    const response = await api.post<SuratMasuk>('/surat-masuk', data);
+  // DIUBAH: Menggunakan tipe 'any' karena menerima FormData (Teks Surat + Berkas Lampiran)
+  createSuratMasuk: async (data: any): Promise<SuratMasuk> => {
+    const response = await api.post<SuratMasuk>('/surat-masuk', data, {
+      headers: {
+        // Biarkan Axios mengatur Boundary FormData secara otomatis, jangan dipaksa application/json
+        'Content-Type': 'multipart/form-data', 
+      },
+    });
     return response.data;
   },
 
