@@ -3,12 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { suratService } from '@/services/surat';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
+import { suratService } from '../services/surat';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
+import { Card, CardContent } from '../components/ui/card';
 import { ArrowLeft, UploadCloud, RefreshCw } from 'lucide-react';
 
 const schema = z.object({
@@ -32,7 +32,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
   const queryClient = useQueryClient();
   const [isDragActive, setIsDragActive] = useState(false);
 
-  // Menggunakan query key dasar yang konsisten ('surat-surat-masuk')
   const { data: surat } = useQuery({
     queryKey: ['surat-surat-masuk', id],
     queryFn: () => suratService.getSuratMasukById(id!),
@@ -68,7 +67,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
     }
   }, [surat, reset]);
 
-  // Memastikan setelah create, query key list 'surat-surat-masuk' di-invalidate
   const createMutation = useMutation({
     mutationFn: (formData: any) => suratService.createSuratMasuk(formData),
     onSuccess: () => {
@@ -77,7 +75,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
     },
   });
 
-  // Memastikan setelah update, query key list 'surat-surat-masuk' di-invalidate
   const updateMutation = useMutation({
     mutationFn: (data: FormData) => suratService.updateSuratMasuk(id!, data),
     onSuccess: () => {
@@ -130,7 +127,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-2">
-      {/* Header Form */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-gray-100" disabled={isLoading}>
           <ArrowLeft className="h-5 w-5" />
@@ -138,26 +134,22 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{id ? 'Edit' : 'Tambah'} Surat Masuk</h1>
           <p className="text-sm text-muted-foreground">
-            {id ? 'Ubah data arsip surat masuk aplikasi' : 'Tambahkan data arsip surat masuk baru'}
+            {id ? 'Surat Masuk / Edit' : 'Tambahkan data arsip surat masuk baru'}
           </p>
         </div>
       </div>
 
-      {/* Main Container Card */}
       <Card className="border border-gray-100 shadow-sm bg-white rounded-xl overflow-hidden">
         <CardContent className="p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             
-            {/* GRID UTAMA */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
               
-              {/* === SISI KIRI: INFORMASI SURAT & LAMPIRAN === */}
               <div className="lg:col-span-2 space-y-6">
                 <div>
                   <h2 className="text-lg font-bold text-blue-900 mb-4">Informasi Surat</h2>
                   
                   <div className="space-y-4">
-                    {/* Input Perihal */}
                     <div className="space-y-1.5">
                       <Label htmlFor="perihal" className="text-sm font-medium text-gray-600">Perihal</Label>
                       <Input 
@@ -172,7 +164,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                       )}
                     </div>
 
-                    {/* Grid Pengirim */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label htmlFor="pengirim" className="text-sm font-medium text-gray-600">Pengirim</Label>
@@ -201,7 +192,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                   </div>
                 </div>
 
-                {/* Seksi Lampiran File */}
                 <div className="space-y-3">
                   <h2 className="text-lg font-bold text-blue-900">Lampiran</h2>
                   
@@ -240,7 +230,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                     />
                   </div>
 
-                  {/* Notifikasi Jika File Masuk */}
                   {currentFile && (
                     <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg animate-in fade-in duration-200">
                       <p className="text-xs text-emerald-700 font-medium flex items-center gap-2">
@@ -252,12 +241,10 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                 </div>
               </div>
 
-              {/* === SISI KANAN: DETAIL ARSIP === */}
               <div className="space-y-6 bg-gray-50/60 p-6 rounded-xl border border-gray-100">
                 <h2 className="text-lg font-bold text-gray-900">Detail Arsip</h2>
                 
                 <div className="space-y-4">
-                  {/* Input Nomor Surat */}
                   <div className="space-y-1.5">
                     <Label htmlFor="nomorSurat" className="text-sm font-medium text-gray-600">No. Surat (Auto-generated)</Label>
                     <div className="relative flex items-center">
@@ -277,7 +264,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                     )}
                   </div>
 
-                  {/* Input Tanggal Surat */}
                   <div className="space-y-1.5">
                     <Label htmlFor="tanggal" className="text-sm font-medium text-gray-600">Tanggal Surat</Label>
                     <Input 
@@ -292,7 +278,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                     )}
                   </div>
 
-                  {/* Dropdown Status */}
                   <div className="space-y-1.5">
                     <Label htmlFor="status" className="text-sm font-medium text-gray-600">Status</Label>
                     <select
@@ -306,7 +291,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                     </select>
                   </div>
 
-                  {/* Textarea Isi Singkat */}
                   <div className="space-y-1.5">
                     <Label htmlFor="isiSingkat" className="text-sm font-medium text-gray-600">Catatan Tambahan</Label>
                     <Textarea 
@@ -323,7 +307,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
 
             </div>
 
-            {/* === TOMBOL AKSI === */}
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
               <Button 
                 type="button" 

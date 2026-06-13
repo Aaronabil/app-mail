@@ -3,9 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { suratService } from '@/services/surat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, ChevronLeft, ChevronRight, Pencil, Download, Trash2 } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, Pencil, Download, Trash2, Eye } from 'lucide-react';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { SuratMasukForm } from './SuratMasukForm';
+import { SuratMasukDetail } from '@/components/SuratMasukDetail'; 
 import { cn } from '@/lib/utils';
 
 function getDateRange(filter: string) {
@@ -25,18 +26,17 @@ function getDateRange(filter: string) {
 export function SuratMasukList() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
-  // PERBAIKAN: Menambahkan tipe literal agar tidak error di sortDir
   const [sort, setSort] = useState<'ASC' | 'DESC'>('DESC');
   const [page, setPage] = useState(0);
   const pageSize = 10;
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
+  const [viewId, setViewId] = useState<number | null>(null);
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const queryClient = useQueryClient();
   const [dateFilter, setDateFilter] = useState('all');
 
-  // Query Key disamakan dengan file Form agar auto-refresh jalan
   const { data: suratData, isLoading } = useQuery({
     queryKey: ['surat-surat-masuk', search, status, sort, dateFilter, page],
     queryFn: () =>
@@ -102,12 +102,12 @@ export function SuratMasukList() {
 
   const statusConfig: Record<string, { label: string; dotColor: string; badgeClass: string }> = {
     RECEIVED: { 
-      label: 'Received', 
+      label: 'Diterima', 
       dotColor: 'bg-emerald-500', 
       badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' 
     },
     ARCHIVED: { 
-      label: 'Archived', 
+      label: 'Disimpan', 
       dotColor: 'bg-blue-500', 
       badgeClass: 'bg-blue-50 text-blue-700 border-blue-200' 
     },
@@ -126,6 +126,15 @@ export function SuratMasukList() {
           setShowForm(false);
           setEditId(null);
         }}
+      />
+    );
+  }
+
+  if (viewId) {
+    return (
+      <SuratMasukDetail
+        id={viewId}
+        onClose={() => setViewId(null)}
       />
     );
   }
@@ -209,7 +218,7 @@ export function SuratMasukList() {
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
+            ={isLoading ? (
               <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Memuat data...</td></tr>
             ) : suratList.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Tidak ada data</td></tr>
@@ -240,6 +249,13 @@ export function SuratMasukList() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => setViewId(surat.id)} 
+                          className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"
+                          title="Lihat Detail"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
                         <button onClick={() => { setEditId(surat.id); setShowForm(true); }} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"><Pencil className="h-4 w-4" /></button>
                         <button onClick={() => handleDownloadPdf(surat.id)} className="p-2 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"><Download className="h-4 w-4" /></button>
                         <button onClick={() => { if(window.confirm('Hapus?')) deleteMutation.mutate(surat.id); }} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"><Trash2 className="h-4 w-4" /></button>
