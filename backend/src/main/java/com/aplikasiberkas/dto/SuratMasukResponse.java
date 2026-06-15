@@ -19,6 +19,7 @@ public class SuratMasukResponse {
     private String isiSingkat;
     private String status;
     private String filePath;
+    private String namaFile;
     private String createdByUsername;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

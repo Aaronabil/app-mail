@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import { suratService } from '../services/surat';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -70,37 +71,45 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
   const createMutation = useMutation({
     mutationFn: (formData: any) => suratService.createSuratMasuk(formData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surat-masuk'] });
+      queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Surat masuk berhasil disimpan');
       onClose();
+    },
+    onError: (error: any) => {
+      toast.error('Gagal menyimpan surat masuk: ' + (error?.response?.data?.message || error?.message || 'Terjadi kesalahan'));
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: FormData) => suratService.updateSuratMasuk(id!, data),
+    mutationFn: (formData: any) => suratService.updateSuratMasuk(id!, formData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surat-masuk'] });
+      queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Surat masuk berhasil diperbarui');
       onClose();
+    },
+    onError: (error: any) => {
+      toast.error('Gagal mengupdate surat masuk: ' + (error?.response?.data?.message || error?.message || 'Terjadi kesalahan'));
     },
   });
 
   const onSubmit = (data: FormData) => {
+    const { file, ...suratData } = data;
+    const formData = new FormData();
+
+    formData.append(
+      "request",
+      new Blob([JSON.stringify(suratData)], { type: "application/json" })
+    );
+
+    if (file) {
+      formData.append("file", file);
+    }
+
     if (id) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(formData);
     } else {
-      const { file, ...suratData } = data;
-      const formData = new FormData();
-
-      formData.append(
-        "request",
-        new Blob([JSON.stringify(suratData)], { type: "application/json" })
-      );
-
-      if (file) {
-        formData.append("file", file);
-      }
-
       createMutation.mutate(formData);
     }
   };

@@ -28,6 +28,7 @@ public class SuratMasukService {
     private final SuratMasukRepository repository;
     private final NomorSuratGenerator nomorSuratGenerator;
     private final AuditLogService auditLogService;
+    private final FileStorageService fileStorageService;
 
     private String getCurrentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -62,8 +63,11 @@ public class SuratMasukService {
                 ));
         }
 
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDir != null ? sortDir : "DESC"),
-                sortBy != null ? sortBy : "tanggal");
+        Sort.Direction direction = Sort.Direction.fromString(sortDir != null ? sortDir : "DESC");
+        String sortField = sortBy != null ? sortBy : "nomorSurat";
+        Sort sort = Sort.by(
+                new Sort.Order(direction, sortField),
+                new Sort.Order(direction, "id"));
 
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<SuratMasuk> pageResult = repository.findAll(spec, pageable);
@@ -89,6 +93,12 @@ public class SuratMasukService {
         return toResponse(surat);
     }
 
+    @Transactional(readOnly = true)
+    public SuratMasuk getEntityById(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Surat not found"));
+    }
+
     @Transactional
     public SuratMasukResponse create(SuratMasukRequest request, org.springframework.web.multipart.MultipartFile file, User user) {
         SuratMasuk surat = new SuratMasuk();
@@ -106,31 +116,23 @@ public class SuratMasukService {
         surat.setStatus(request.getStatus() != null ? request.getStatus() : "RECEIVED");
         surat.setCreatedBy(user);
 
-        // === PROSES SIMPAN FILE LAMPIRAN ===
+        surat = repository.save(surat);
+
         if (file != null && !file.isEmpty()) {
             try {
-                String folderUpload = System.getProperty("user.dir") + "/uploads/";
-                java.io.File direktori = new java.io.File(folderUpload);
-                if (!direktori.exists()) {
-                    direktori.mkdirs();
-                }
-                
-                String namaFileUnik = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-                file.transferTo(new java.io.File(folderUpload + namaFileUnik));
-                
-                // Set path file ke entity biar tersimpan di DB
-                surat.setFilePath(namaFileUnik);
-                
-            } catch (java.io.IOException e) {
+                String storagePath = fileStorageService.storeFile(file, "surat-masuk/" + surat.getId());
+                surat.setFilePath(storagePath);
+                surat.setNamaFile(file.getOriginalFilename());
+                surat = repository.save(surat);
+            } catch (Exception e) {
                 throw new RuntimeException("Gagal menyimpan berkas lampiran: " + e.getMessage());
             }
         }
 
-        SuratMasukResponse saved = toResponse(repository.save(surat));
+        SuratMasukResponse saved = toResponse(surat);
 
-        // Beresin logika oldStatus yang dead code kemarin
         String detail = "Menambah surat masuk baru (" + saved.getPerihal() + ").";
-        
+
         auditLogService.createLog("CREATE", "Surat Masuk", saved.getId(),
                 saved.getNomorSurat(), detail, getCurrentUser());
 
@@ -138,7 +140,7 @@ public class SuratMasukService {
     }
 
     @Transactional
-    public SuratMasukResponse update(Long id, SuratMasukRequest request) {
+    public SuratMasukResponse update(Long id, SuratMasukRequest request, org.springframework.web.multipart.MultipartFile file) {
         SuratMasuk surat = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Surat not found"));
 
@@ -150,6 +152,16 @@ public class SuratMasukService {
         surat.setPerihal(request.getPerihal());
         surat.setIsiSingkat(request.getIsiSingkat());
         surat.setStatus(request.getStatus());
+
+        if (file != null && !file.isEmpty()) {
+            try {
+                String storagePath = fileStorageService.storeFile(file, "surat-masuk/" + id);
+                surat.setFilePath(storagePath);
+                surat.setNamaFile(file.getOriginalFilename());
+            } catch (Exception e) {
+                throw new RuntimeException("Gagal menyimpan berkas lampiran: " + e.getMessage());
+            }
+        }
 
         SuratMasukResponse updated = toResponse(repository.save(surat));
 
@@ -190,6 +202,7 @@ public class SuratMasukService {
                 surat.getIsiSingkat(),
                 surat.getStatus(),
                 surat.getFilePath(),
+                surat.getNamaFile(),
                 surat.getCreatedBy() != null ? surat.getCreatedBy().getUsername() : null,
                 surat.getCreatedAt(),
                 surat.getUpdatedAt()

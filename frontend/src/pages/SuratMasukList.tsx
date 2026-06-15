@@ -1,12 +1,23 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { suratService } from '@/services/surat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, ChevronLeft, ChevronRight, Pencil, Download, Trash2, Eye } from 'lucide-react';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { SuratMasukForm } from './SuratMasukForm';
-import { SuratMasukDetail } from '@/components/SuratMasukDetail'; 
+import { SuratMasukDetail } from '@/components/SuratMasukDetail';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 
 function getDateRange(filter: string) {
@@ -26,14 +37,15 @@ function getDateRange(filter: string) {
 export function SuratMasukList() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
-  const [sort, setSort] = useState<'ASC' | 'DESC'>('DESC');
+  const [sort, setSort] = useState<'ASC' | 'DESC'>('ASC');
   const [page, setPage] = useState(0);
-  const pageSize = 10;
+  const pageSize = 5;
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [viewId, setViewId] = useState<number | null>(null);
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const [dateFilter, setDateFilter] = useState('all');
 
@@ -43,7 +55,6 @@ export function SuratMasukList() {
       suratService.getSuratMasuk({
         search: search || undefined,
         status: status || undefined,
-        sortBy: 'tanggal',
         sortDir: sort,
         page,
         size: pageSize,
@@ -56,6 +67,11 @@ export function SuratMasukList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
       setSelectedIds([]);
+      setDeleteTargetId(null);
+      toast.success('Surat masuk berhasil dihapus');
+    },
+    onError: (error: any) => {
+      toast.error('Gagal menghapus surat masuk: ' + (error?.response?.data?.message || error?.message || 'Terjadi kesalahan'));
     },
   });
 
@@ -101,20 +117,20 @@ export function SuratMasukList() {
   };
 
   const statusConfig: Record<string, { label: string; dotColor: string; badgeClass: string }> = {
-    RECEIVED: { 
-      label: 'Diterima', 
-      dotColor: 'bg-emerald-500', 
-      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+    RECEIVED: {
+      label: 'Diterima',
+      dotColor: 'bg-emerald-500',
+      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200'
     },
-    ARCHIVED: { 
-      label: 'Disimpan', 
-      dotColor: 'bg-blue-500', 
-      badgeClass: 'bg-blue-50 text-blue-700 border-blue-200' 
+    ARCHIVED: {
+      label: 'Disimpan',
+      dotColor: 'bg-blue-500',
+      badgeClass: 'bg-blue-50 text-blue-700 border-blue-200'
     },
-    DRAFT: { 
-      label: 'Draft', 
-      dotColor: 'bg-gray-400', 
-      badgeClass: 'bg-gray-50 text-gray-600 border-gray-200' 
+    DRAFT: {
+      label: 'Draft',
+      dotColor: 'bg-gray-400',
+      badgeClass: 'bg-gray-50 text-gray-600 border-gray-200'
     },
   };
 
@@ -202,9 +218,9 @@ export function SuratMasukList() {
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/50">
               <th className="w-12 px-4 py-4">
-                <input 
-                  type="checkbox" 
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4" 
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
                   checked={suratList.length > 0 && selectedIds.length === suratList.length}
                   onChange={(e) => handleSelectAll(e.target.checked)}
                 />
@@ -218,21 +234,21 @@ export function SuratMasukList() {
             </tr>
           </thead>
           <tbody>
-            ={isLoading ? (
+            {isLoading ? (
               <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Memuat data...</td></tr>
             ) : suratList.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Tidak ada data</td></tr>
             ) : (
               suratList.map((surat: any) => {
-                const config = statusConfig[surat.status] || { 
-                  label: surat.status, dotColor: 'bg-gray-400', badgeClass: 'bg-gray-50 text-gray-600 border-gray-200' 
+                const config = statusConfig[surat.status] || {
+                  label: surat.status, dotColor: 'bg-gray-400', badgeClass: 'bg-gray-50 text-gray-600 border-gray-200'
                 };
                 return (
                   <tr key={surat.id} className={cn("border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors", selectedIds.includes(surat.id) && "bg-blue-50/40")}>
                     <td className="px-4 py-3 text-center">
-                      <input 
-                        type="checkbox" 
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4" 
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
                         checked={selectedIds.includes(surat.id)}
                         onChange={(e) => handleSelectRow(surat.id, e.target.checked)}
                       />
@@ -249,16 +265,16 @@ export function SuratMasukList() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button 
-                          onClick={() => setViewId(surat.id)} 
+                        <button
+                          onClick={() => setViewId(surat.id)}
                           className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"
                           title="Lihat Detail"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                        <button onClick={() => { setEditId(surat.id); setShowForm(true); }} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"><Pencil className="h-4 w-4" /></button>
-                        <button onClick={() => handleDownloadPdf(surat.id)} className="p-2 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"><Download className="h-4 w-4" /></button>
-                        <button onClick={() => { if(window.confirm('Hapus?')) deleteMutation.mutate(surat.id); }} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => { setEditId(surat.id); setShowForm(true); }} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors" title="Update Data"><Pencil className="h-4 w-4" /></button>
+                        <button onClick={() => handleDownloadPdf(surat.id)} className="p-2 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors" title="Download Data"><Download className="h-4 w-4" /></button>
+                        <button onClick={() => setDeleteTargetId(surat.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors" title="Hapus Data"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </td>
                   </tr>
@@ -281,6 +297,23 @@ export function SuratMasukList() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={deleteTargetId !== null} onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Surat Masuk?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Data surat beserta lampirannya akan dihapus secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deleteTargetId !== null) deleteMutation.mutate(deleteTargetId); }}>
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

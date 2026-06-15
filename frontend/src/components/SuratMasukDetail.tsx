@@ -35,7 +35,7 @@ export function SuratMasukDetail({ id, onClose }: SuratMasukDetailProps) {
   const handleDownloadAttachment = async () => {
     try {
       const dataSurat = surat as any;
-      const fileName = dataSurat.namaFile || 'lampiran_surat_masuk.pdf';
+      const fileName = dataSurat.namaFile || (dataSurat.filePath ? dataSurat.filePath.split('/').pop() : 'lampiran_surat_masuk.pdf');
       const blob = await suratService.downloadOriginalFile(id);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -125,14 +125,14 @@ export function SuratMasukDetail({ id, onClose }: SuratMasukDetailProps) {
 
         <div>
           <h3 className="text-xs font-bold uppercase text-gray-400 tracking-wider mb-3">Attachments</h3>
-          {dataSurat.namaFile || dataSurat.fileUrl || dataSurat.filePath ? (
+          {dataSurat.filePath || dataSurat.namaFile ? (
             <div className="inline-flex items-center gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50 max-w-sm">
               <div className="p-2 bg-red-50 text-red-500 rounded-md">
                 <FileText className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-gray-800 truncate">
-                  {dataSurat.namaFile || 'Lampiran_Surat.pdf'}
+                  {dataSurat.namaFile || (dataSurat.filePath ? dataSurat.filePath.split('/').pop() : 'Lampiran_Surat.pdf')}
                 </p>
                 <p className="text-[10px] text-gray-400">File Lampiran Surat</p>
               </div>

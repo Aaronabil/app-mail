@@ -43,6 +43,8 @@ public class SuratMasuk {
 
     private String filePath;
 
+    private String namaFile;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;

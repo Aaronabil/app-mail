@@ -2,15 +2,21 @@ package com.aplikasiberkas.controller;
 
 import com.aplikasiberkas.dto.SuratMasukRequest;
 import com.aplikasiberkas.dto.SuratMasukResponse;
+import com.aplikasiberkas.entity.SuratMasuk;
 import com.aplikasiberkas.entity.User;
 import com.aplikasiberkas.service.AuthService;
+import com.aplikasiberkas.service.FileStorageService;
 import com.aplikasiberkas.service.SuratMasukService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +28,7 @@ public class SuratMasukController {
 
     private final SuratMasukService service;
     private final AuthService authService;
+    private final FileStorageService fileStorageService;
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAll(
@@ -42,6 +49,22 @@ public class SuratMasukController {
         return ResponseEntity.ok(service.getById(id));
     }
 
+    @GetMapping("/{id}/file")
+    public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
+        SuratMasuk surat = service.getEntityById(id);
+        if (surat.getFilePath() == null || surat.getFilePath().isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Resource resource = fileStorageService.loadFileAsResource(surat.getFilePath());
+        String fileName = surat.getNamaFile() != null ? surat.getNamaFile()
+                : Paths.get(surat.getFilePath()).getFileName().toString();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .body(resource);
+    }
+
     @PostMapping(consumes = { org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<SuratMasukResponse> create(
             @RequestPart("request") SuratMasukRequest request,
@@ -52,12 +75,13 @@ public class SuratMasukController {
         return ResponseEntity.ok(service.create(request, file, user));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(path = "/{id}", consumes = { org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<SuratMasukResponse> update(
             @PathVariable Long id,
-            @RequestBody SuratMasukRequest request) {
+            @RequestPart("request") SuratMasukRequest request,
+            @RequestPart(value = "file", required = false) org.springframework.web.multipart.MultipartFile file) {
         
-        return ResponseEntity.ok(service.update(id, request));
+        return ResponseEntity.ok(service.update(id, request, file));
     }
 
     @DeleteMapping("/{id}")

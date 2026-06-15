@@ -1,5 +1,6 @@
   import { useQuery } from '@tanstack/react-query';
 import { suratService } from '@/services/surat';
+import { format } from 'date-fns';
 import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart } from 'recharts';
 import {
   FileText,
@@ -8,7 +9,6 @@ import {
   Archive,
   TrendingUp,
   TrendingDown,
-  MoreVertical,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -60,6 +60,23 @@ export function Dashboard() {
     queryKey: ['dashboard-chart-monthly'],
     queryFn: suratService.getMonthlyChartData,
   });
+
+  const { data: suratMasukData } = useQuery({
+    queryKey: ['dashboard-surat-masuk'],
+    queryFn: () => suratService.getSuratMasuk({ size: 5, sortBy: 'createdAt', sortDir: 'DESC' }),
+  });
+
+  const { data: suratKeluarData } = useQuery({
+    queryKey: ['dashboard-surat-keluar'],
+    queryFn: () => suratService.getSuratKeluar({ sortBy: 'createdAt', sortDir: 'DESC' }),
+  });
+
+  const recentActivity = [
+    ...(suratMasukData?.content || []).map((s: any) => ({ ...s, type: 'masuk' })),
+    ...(suratKeluarData || []).map((s: any) => ({ ...s, type: 'keluar' })),
+  ]
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
 
   const barData =
     chartData?.months.map((m) => ({
@@ -257,11 +274,8 @@ export function Dashboard() {
 
       {/* Aktivitas Terbaru */}
       <Card>
-        <div className="flex items-center justify-between px-5 py-4 border-b">
+        <div className="px-5 py-4 border-b">
           <h3 className="text-sm font-bold">Aktivitas Terbaru</h3>
-          <button className="text-xs font-medium text-blue-600 hover:text-blue-700">
-            Lihat Semua
-          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -271,90 +285,50 @@ export function Dashboard() {
                 <th className="px-5 py-3 font-medium">Perihal</th>
                 <th className="px-5 py-3 font-medium">Tanggal</th>
                 <th className="px-5 py-3 font-medium">Status</th>
-                <th className="px-5 py-3 font-medium text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b last:border-0 hover:bg-muted/50">
-                <td className="px-5 py-3.5 font-medium">SRT/2023/10/045</td>
-                <td className="px-5 py-3.5 text-muted-foreground">Undangan Rapat Evaluasi Triwulan</td>
-                <td className="px-5 py-3.5 text-muted-foreground">12 Okt 2023</td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-green-500" />
-                    <span className="text-xs font-medium text-green-700">Terarsip</span>
-                  </div>
-                </td>
-                <td className="px-5 py-3.5 text-right">
-                  <button className="rounded-md p-1 text-muted-foreground hover:bg-muted">
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-              <tr className="border-b last:border-0 hover:bg-muted/50">
-                <td className="px-5 py-3.5 font-medium">SRT/2023/10/044</td>
-                <td className="px-5 py-3.5 text-muted-foreground">Permohonan Pengadaan Barang IT</td>
-                <td className="px-5 py-3.5 text-muted-foreground">11 Okt 2023</td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-blue-500" />
-                    <span className="text-xs font-medium text-blue-700">Terkirim</span>
-                  </div>
-                </td>
-                <td className="px-5 py-3.5 text-right">
-                  <button className="rounded-md p-1 text-muted-foreground hover:bg-muted">
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-              <tr className="border-b last:border-0 hover:bg-muted/50">
-                <td className="px-5 py-3.5 font-medium">-</td>
-                <td className="px-5 py-3.5 text-muted-foreground">Laporan Bulanan September</td>
-                <td className="px-5 py-3.5 text-muted-foreground">10 Okt 2023</td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-gray-400" />
-                    <span className="text-xs font-medium text-gray-600">Draft</span>
-                  </div>
-                </td>
-                <td className="px-5 py-3.5 text-right">
-                  <button className="rounded-md p-1 text-muted-foreground hover:bg-muted">
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-              <tr className="border-b last:border-0 hover:bg-muted/50">
-                <td className="px-5 py-3.5 font-medium">SRT/2023/10/042</td>
-                <td className="px-5 py-3.5 text-muted-foreground">Balasan Penawaran Kerjasama</td>
-                <td className="px-5 py-3.5 text-muted-foreground">08 Okt 2023</td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-green-500" />
-                    <span className="text-xs font-medium text-green-700">Terarsip</span>
-                  </div>
-                </td>
-                <td className="px-5 py-3.5 text-right">
-                  <button className="rounded-md p-1 text-muted-foreground hover:bg-muted">
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-              <tr className="border-b last:border-0 hover:bg-muted/50">
-                <td className="px-5 py-3.5 font-medium">SRT/2023/10/041</td>
-                <td className="px-5 py-3.5 text-muted-foreground">Pemberitahuan Cuti Bersama</td>
-                <td className="px-5 py-3.5 text-muted-foreground">05 Okt 2023</td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-green-500" />
-                    <span className="text-xs font-medium text-green-700">Terarsip</span>
-                  </div>
-                </td>
-                <td className="px-5 py-3.5 text-right">
-                  <button className="rounded-md p-1 text-muted-foreground hover:bg-muted">
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
+              {recentActivity.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-5 py-8 text-center text-muted-foreground">
+                    Belum ada aktivitas
+                  </td>
+                </tr>
+              ) : (
+                recentActivity.map((item: any) => {
+                  const isMasuk = item.type === 'masuk';
+                  const statusConfig: Record<string, { label: string; dotColor: string; color: string }> = {
+                    RECEIVED: { label: 'Diterima', dotColor: 'bg-emerald-500', color: 'text-emerald-700' },
+                    ARCHIVED: { label: 'Disimpan', dotColor: 'bg-blue-500', color: 'text-blue-700' },
+                    DRAFT: { label: 'Draft', dotColor: 'bg-gray-400', color: 'text-gray-600' },
+                    SENT: { label: 'Terkirim', dotColor: 'bg-blue-500', color: 'text-blue-700' },
+                  };
+                  const sc = statusConfig[item.status] || { label: item.status, dotColor: 'bg-gray-400', color: 'text-gray-600' };
+
+                  return (
+                    <tr key={`${item.type}-${item.id}`} className="border-b last:border-0 hover:bg-muted/50">
+                      <td className="px-5 py-3.5 font-medium">
+                        <div className="flex items-center gap-2">
+                          {item.nomorSurat}
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${isMasuk ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}`}>
+                            {isMasuk ? 'Masuk' : 'Keluar'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-muted-foreground">{item.perihal}</td>
+                      <td className="px-5 py-3.5 text-muted-foreground">
+                        {item.tanggal ? format(new Date(item.tanggal), 'dd MMM yyyy') : '-'}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`h-2 w-2 rounded-full ${sc.dotColor}`} />
+                          <span className={`text-xs font-medium ${sc.color}`}>{sc.label}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

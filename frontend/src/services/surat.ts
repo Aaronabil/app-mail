@@ -2,7 +2,6 @@ import api from './api';
 import {
   SuratMasuk,
   SuratKeluar,
-  SuratMasukRequest,
   SuratKeluarRequest,
   DashboardStats,
   FilterParams,
@@ -34,14 +33,18 @@ export const suratService = {
   createSuratMasuk: async (data: any): Promise<SuratMasuk> => {
     const response = await api.post<SuratMasuk>('/surat-masuk', data, {
       headers: {
-        'Content-Type': 'multipart/form-data', 
+        'Content-Type': 'multipart/form-data',
       },
     });
     return response.data;
   },
 
-  updateSuratMasuk: async (id: number, data: SuratMasukRequest): Promise<SuratMasuk> => {
-    const response = await api.put<SuratMasuk>(`/surat-masuk/${id}`, data);
+  updateSuratMasuk: async (id: number, data: any): Promise<SuratMasuk> => {
+    const response = await api.put<SuratMasuk>(`/surat-masuk/${id}`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 

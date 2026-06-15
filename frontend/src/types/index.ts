@@ -27,6 +27,7 @@ export interface SuratMasuk {
   isiSingkat?: string;
   status: string;
   filePath?: string;
+  namaFile?: string;
   createdByUsername?: string;
   createdAt: string;
   updatedAt: string;
