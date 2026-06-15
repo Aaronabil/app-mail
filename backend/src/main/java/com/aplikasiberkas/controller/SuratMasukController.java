@@ -42,13 +42,14 @@ public class SuratMasukController {
         return ResponseEntity.ok(service.getById(id));
     }
 
-    @PostMapping
+    @PostMapping(consumes = { org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<SuratMasukResponse> create(
-            @RequestBody SuratMasukRequest request,
+            @RequestPart("request") SuratMasukRequest request,
+            @RequestPart(value = "file", required = false) org.springframework.web.multipart.MultipartFile file,
             Authentication authentication) {
         
         User user = authService.getCurrentUser(authentication.getName());
-        return ResponseEntity.ok(service.create(request, user));
+        return ResponseEntity.ok(service.create(request, file, user));
     }
 
     @PutMapping("/{id}")
