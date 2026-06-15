@@ -73,6 +73,13 @@ export const suratService = {
     return response.data;
   },
 
+  uploadSuratKeluarAttachment: async (id: number, file: File): Promise<SuratKeluar> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<SuratKeluar>(`/surat-keluar/${id}/attachment`, formData);
+    return response.data;
+  },
+
   deleteSuratKeluar: async (id: number): Promise<void> => {
     await api.delete(`/surat-keluar/${id}`);
   },

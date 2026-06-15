@@ -5,6 +5,7 @@ import com.aplikasiberkas.dto.SuratKeluarResponse;
 import com.aplikasiberkas.entity.SuratKeluar;
 import com.aplikasiberkas.entity.User;
 import com.aplikasiberkas.repository.SuratKeluarRepository;
+import com.aplikasiberkas.service.FileStorageService;
 import com.aplikasiberkas.util.NomorSuratGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -12,6 +13,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,6 +26,7 @@ public class SuratKeluarService {
     private final SuratKeluarRepository repository;
     private final NomorSuratGenerator nomorSuratGenerator;
     private final AuditLogService auditLogService;
+    private final FileStorageService fileStorageService;
 
     private String getCurrentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -125,6 +128,27 @@ public class SuratKeluarService {
                 updated.getNomorSurat(), detail, getCurrentUser());
 
         return updated;
+    }
+
+    @Transactional
+    public SuratKeluarResponse uploadAttachment(Long id, MultipartFile file) {
+        SuratKeluar surat = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Surat not found"));
+
+        String storagePath = fileStorageService.storeFile(file, "surat-keluar/" + id);
+        surat.setFilePath(storagePath);
+        SuratKeluarResponse updated = toResponse(repository.save(surat));
+
+        String detail = "Menambahkan lampiran untuk surat keluar (" + updated.getNomorSurat() + ").";
+        auditLogService.createLog("UPDATE", "Surat Keluar", updated.getId(),
+                updated.getNomorSurat(), detail, getCurrentUser());
+
+        return updated;
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.core.io.Resource loadAttachment(String filePath) {
+        return fileStorageService.loadFileAsResource(filePath);
     }
 
     @Transactional

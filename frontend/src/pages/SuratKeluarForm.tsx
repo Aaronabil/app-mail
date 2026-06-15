@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,11 +30,15 @@ interface SuratKeluarFormProps {
 export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
   const queryClient = useQueryClient();
 
-  const { data: surat } = useQuery({
+  const isEditMode = id != null;
+  const { data: surat, isLoading: isSuratLoading } = useQuery({
     queryKey: ['surat-keluar', id],
     queryFn: () => suratService.getSuratKeluarById(id!),
-    enabled: !!id,
+    enabled: isEditMode,
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [existingFileName, setExistingFileName] = useState<string | null>(null);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   const {
     register,
@@ -43,7 +47,18 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
     reset,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      nomorSurat: '',
+      tanggal: '',
+      penerima: '',
+      perihal: '',
+      isiSingkat: '',
+      status: 'DRAFT',
+    },
   });
+
+  const getFileName = (path: string | undefined | null) =>
+    path?.split(/[/\\]/).pop() ?? null;
 
   useEffect(() => {
     if (surat) {
@@ -55,32 +70,84 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
         isiSingkat: surat.isiSingkat || '',
         status: surat.status,
       });
+      setExistingFileName(getFileName(surat.filePath));
+      setSelectedFile(null);
+    } else if (!isEditMode) {
+      reset({
+        nomorSurat: '',
+        tanggal: '',
+        penerima: '',
+        perihal: '',
+        isiSingkat: '',
+        status: 'DRAFT',
+      });
+      setExistingFileName(null);
+      setSelectedFile(null);
     }
-  }, [surat, reset]);
+  }, [surat, reset, isEditMode]);
 
   const createMutation = useMutation({
     mutationFn: suratService.createSuratKeluar,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surat-keluar'] });
-      onClose();
-    },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: FormData) => suratService.updateSuratKeluar(id!, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surat-keluar'] });
-      onClose();
-    },
   });
 
-  const onSubmit = (data: FormData) => {
-    if (id) {
-      updateMutation.mutate(data);
-    } else {
-      createMutation.mutate(data);
+  const uploadAttachment = async (suratId: number) => {
+    if (!selectedFile) return;
+    setUploadingAttachment(true);
+    try {
+      const updated = await suratService.uploadSuratKeluarAttachment(suratId, selectedFile);
+      setExistingFileName(getFileName(updated.filePath) ?? selectedFile.name);
+    } finally {
+      setUploadingAttachment(false);
+      setSelectedFile(null);
     }
   };
+
+  const onSubmit = async (data: FormData) => {
+    try {
+      const result = isEditMode
+        ? await updateMutation.mutateAsync(data)
+        : await createMutation.mutateAsync(data);
+
+      const suratId = id ?? result.id;
+      if (selectedFile) {
+        await uploadAttachment(suratId);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['surat-keluar'] });
+      queryClient.invalidateQueries({ queryKey: ['surat-keluar', suratId] });
+      onClose();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (isEditMode && isSuratLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Edit Surat Keluar</h1>
+            <p className="text-muted-foreground">Memuat data...</p>
+          </div>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Data Surat</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-72 rounded-lg bg-slate-100" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -89,9 +156,9 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">{id ? 'Edit' : 'Tambah'} Surat Keluar</h1>
+          <h1 className="text-3xl font-bold">{isEditMode ? 'Edit' : 'Tambah'} Surat Keluar</h1>
           <p className="text-muted-foreground">
-            {id ? 'Ubah data surat keluar' : 'Tambahkan surat keluar baru'}
+            {isEditMode ? 'Ubah data surat keluar' : 'Tambahkan surat keluar baru'}
           </p>
         </div>
       </div>
@@ -144,6 +211,29 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="file">Lampiran (PDF)</Label>
+              <input
+                id="file"
+                type="file"
+                accept="application/pdf"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setSelectedFile(file);
+                }}
+                className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+              {selectedFile ? (
+                <p className="text-sm text-gray-500">File siap diunggah: {selectedFile.name}</p>
+              ) : existingFileName ? (
+                <p className="text-sm text-gray-500">
+                  File saat ini: <a href={`/api/surat-keluar/${id}/attachment`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{existingFileName}</a>
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500">Tidak ada lampiran saat ini.</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <select
                 id="status"
@@ -157,8 +247,17 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
             </div>
 
             <div className="flex gap-4">
-              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                {id ? 'Update' : 'Simpan'}
+              <Button
+                type="submit"
+                disabled={
+                  createMutation.isPending || updateMutation.isPending || uploadingAttachment
+                }
+              >
+                {uploadingAttachment
+                  ? 'Mengunggah lampiran...'
+                  : id
+                  ? 'Update'
+                  : 'Simpan'}
               </Button>
               <Button type="button" variant="outline" onClick={onClose}>
                 Batal

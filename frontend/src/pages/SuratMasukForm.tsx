@@ -70,7 +70,8 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
   const createMutation = useMutation({
     mutationFn: (formData: any) => suratService.createSuratMasuk(formData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
+      queryClient.invalidateQueries({ queryKey: ['surat-masuk'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       onClose();
     },
   });
@@ -78,7 +79,8 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
   const updateMutation = useMutation({
     mutationFn: (data: FormData) => suratService.updateSuratMasuk(id!, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
+      queryClient.invalidateQueries({ queryKey: ['surat-masuk'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       onClose();
     },
   });
