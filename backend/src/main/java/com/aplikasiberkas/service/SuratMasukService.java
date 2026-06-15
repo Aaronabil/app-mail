@@ -90,7 +90,7 @@ public class SuratMasukService {
     }
 
     @Transactional
-    public SuratMasukResponse create(SuratMasukRequest request, User user) {
+    public SuratMasukResponse create(SuratMasukRequest request, org.springframework.web.multipart.MultipartFile file, User user) {
         SuratMasuk surat = new SuratMasuk();
 
         if (request.getNomorSurat() == null || request.getNomorSurat().isEmpty()) {
@@ -106,16 +106,31 @@ public class SuratMasukService {
         surat.setStatus(request.getStatus() != null ? request.getStatus() : "RECEIVED");
         surat.setCreatedBy(user);
 
+        // === PROSES SIMPAN FILE LAMPIRAN ===
+        if (file != null && !file.isEmpty()) {
+            try {
+                String folderUpload = System.getProperty("user.dir") + "/uploads/";
+                java.io.File direktori = new java.io.File(folderUpload);
+                if (!direktori.exists()) {
+                    direktori.mkdirs();
+                }
+                
+                String namaFileUnik = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+                file.transferTo(new java.io.File(folderUpload + namaFileUnik));
+                
+                // Set path file ke entity biar tersimpan di DB
+                surat.setFilePath(namaFileUnik);
+                
+            } catch (java.io.IOException e) {
+                throw new RuntimeException("Gagal menyimpan berkas lampiran: " + e.getMessage());
+            }
+        }
+
         SuratMasukResponse saved = toResponse(repository.save(surat));
 
-        String oldStatus = null;
-        String newStatus = saved.getStatus();
-        String detail;
-        if (oldStatus == null) {
-            detail = "Menambah surat masuk baru (" + saved.getPerihal() + ").";
-        } else {
-            detail = "Membuat surat masuk dengan status " + newStatus + ".";
-        }
+        // Beresin logika oldStatus yang dead code kemarin
+        String detail = "Menambah surat masuk baru (" + saved.getPerihal() + ").";
+        
         auditLogService.createLog("CREATE", "Surat Masuk", saved.getId(),
                 saved.getNomorSurat(), detail, getCurrentUser());
 

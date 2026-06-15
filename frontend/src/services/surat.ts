@@ -8,10 +8,9 @@ import {
   FilterParams,
   MonthlyChartData,
   PaginatedResponse,
-} from '@/types';
+} from '../types';
 
 export const suratService = {
-  // Dashboard
   getDashboardStats: async (): Promise<DashboardStats> => {
     const response = await api.get<DashboardStats>('/dashboard/stats');
     return response.data;
@@ -22,7 +21,6 @@ export const suratService = {
     return response.data;
   },
 
-  // Surat Masuk
   getSuratMasuk: async (params?: FilterParams & { page?: number; size?: number }): Promise<PaginatedResponse<SuratMasuk>> => {
     const response = await api.get<PaginatedResponse<SuratMasuk>>('/surat-masuk', { params });
     return response.data;
@@ -33,8 +31,12 @@ export const suratService = {
     return response.data;
   },
 
-  createSuratMasuk: async (data: SuratMasukRequest): Promise<SuratMasuk> => {
-    const response = await api.post<SuratMasuk>('/surat-masuk', data);
+  createSuratMasuk: async (data: any): Promise<SuratMasuk> => {
+    const response = await api.post<SuratMasuk>('/surat-masuk', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data', 
+      },
+    });
     return response.data;
   },
 
@@ -51,7 +53,6 @@ export const suratService = {
     await api.post('/surat-masuk/batch-delete', ids);
   },
 
-  // Surat Keluar
   getSuratKeluar: async (params?: FilterParams): Promise<SuratKeluar[]> => {
     const response = await api.get<SuratKeluar[]>('/surat-keluar', { params });
     return response.data;
@@ -80,7 +81,6 @@ export const suratService = {
     await api.post('/surat-keluar/batch-delete', ids);
   },
 
-  // PDF Export
   exportSuratMasukPdf: async (id: number): Promise<Blob> => {
     const response = await api.get(`/pdf/surat-masuk/${id}`, {
       responseType: 'blob',
@@ -109,8 +109,14 @@ export const suratService = {
     return response.data;
   },
 
-  // Alias for convenience
   downloadPdf: async (id: number): Promise<Blob> => {
     return suratService.exportSuratMasukPdf(id);
+  },
+
+  downloadOriginalFile: async (id: number): Promise<Blob> => {
+    const response = await api.get(`/surat-masuk/${id}/file`, {
+      responseType: 'blob',
+    });
+    return response.data;
   },
 };
