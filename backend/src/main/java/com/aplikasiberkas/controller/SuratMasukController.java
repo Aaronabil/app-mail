@@ -95,4 +95,10 @@ public class SuratMasukController {
         service.batchDelete(ids);
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/bulk")
+    public ResponseEntity<?> deleteMultipleSurat(@RequestBody List<Long> ids) {
+        service.batchDelete(ids);
+        return ResponseEntity.ok().body("{\"message\": \"Surat berhasil dihapus.\"}");
+    }
 }

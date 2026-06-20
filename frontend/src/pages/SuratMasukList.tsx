@@ -46,6 +46,7 @@ export function SuratMasukList() {
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [isBatchDelete, setIsBatchDelete] = useState(false);
   const queryClient = useQueryClient();
   const [dateFilter, setDateFilter] = useState('all');
 
@@ -72,6 +73,20 @@ export function SuratMasukList() {
     },
     onError: (error: any) => {
       toast.error('Gagal menghapus surat masuk: ' + (error?.response?.data?.message || error?.message || 'Terjadi kesalahan'));
+    },
+  });
+
+  const batchDeleteMutation = useMutation({
+    mutationFn: suratService.batchDeleteSuratMasuk,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
+      setSelectedIds([]);
+      setIsBatchDelete(false);
+      setDeleteTargetId(null);
+      toast.success('Semua surat terpilih berhasil dihapus');
+    },
+    onError: (error: any) => {
+      toast.error('Gagal menghapus beberapa surat: ' + (error?.response?.data?.message || error?.message || 'Terjadi kesalahan'));
     },
   });
 
@@ -171,6 +186,19 @@ export function SuratMasukList() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
+        {selectedIds.length > 0 && (
+          <Button 
+            variant="destructive" 
+            onClick={() => {
+              setIsBatchDelete(true);
+              setDeleteTargetId(selectedIds[0]);
+            }}
+            className="h-10 px-4 font-medium animate-in fade-in zoom-in-95 duration-150"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Hapus Terpilih ({selectedIds.length})
+          </Button>
+        )}
         <div className="relative flex-1 min-w-[260px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
@@ -274,7 +302,16 @@ export function SuratMasukList() {
                         </button>
                         <button onClick={() => { setEditId(surat.id); setShowForm(true); }} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors" title="Update Data"><Pencil className="h-4 w-4" /></button>
                         <button onClick={() => handleDownloadPdf(surat.id)} className="p-2 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors" title="Download Data"><Download className="h-4 w-4" /></button>
-                        <button onClick={() => setDeleteTargetId(surat.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors" title="Hapus Data"><Trash2 className="h-4 w-4" /></button>
+                        <button 
+                          onClick={() => {
+                            setIsBatchDelete(false);
+                            setDeleteTargetId(surat.id);
+                          }} 
+                          className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors" 
+                          title="Hapus Data"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -298,17 +335,35 @@ export function SuratMasukList() {
         )}
       </div>
 
-      <AlertDialog open={deleteTargetId !== null} onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}>
+      <AlertDialog 
+        open={deleteTargetId !== null} 
+        onOpenChange={(open) => { 
+          if (!open) {
+            setDeleteTargetId(null);
+            setIsBatchDelete(false);
+          } 
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Surat Masuk?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isBatchDelete ? `Hapus ${selectedIds.length} Surat Masuk Terpilih?` : 'Hapus Surat Masuk?'}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Data surat beserta lampirannya akan dihapus secara permanen.
+              Tindakan ini tidak dapat dibatalkan. Data surat beserta berkas lampirannya akan dihapus secara permanen dari server.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { if (deleteTargetId !== null) deleteMutation.mutate(deleteTargetId); }}>
+            <AlertDialogCancel onClick={() => setIsBatchDelete(false)}>Batal</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => { 
+                if (isBatchDelete) {
+                  batchDeleteMutation.mutate(selectedIds);
+                } else if (deleteTargetId !== null) {
+                  deleteMutation.mutate(deleteTargetId);
+                } 
+              }}
+            >
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>

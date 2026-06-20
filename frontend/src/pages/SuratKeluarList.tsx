@@ -34,7 +34,7 @@ function getDateRange(filter: string) {
 export function SuratKeluarList() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
-  const [sort, setSort] = useState('DESC');
+  const [sort, setSort] = useState<'ASC' | 'DESC'>('DESC');
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -158,7 +158,7 @@ export function SuratKeluarList() {
 
         <select
           value={sort}
-          onChange={(e) => setSort(e.target.value)}
+          onChange={(e) => setSort(e.target.value as 'ASC' | 'DESC')}
           className="h-9 rounded-md border border-input bg-background px-3 text-sm"
         >
           <option value="DESC">Terbaru</option>
