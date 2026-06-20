@@ -94,6 +94,20 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
     },
   });
 
+  const validateFileFile = (file: File): boolean => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Ukuran file terlalu besar! Maksimal 10MB.");
+      return false;
+    }
+    const allowedExtensions = ['pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx'];
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+      toast.error("Format file tidak didukung! Hanya boleh PDF, DOCS, JPG, atau PNG.");
+      return false;
+    }
+    return true;
+  };
+
   const onSubmit = (data: FormData) => {
     const { file, ...suratData } = data;
     const formData = new FormData();
@@ -130,7 +144,10 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
     setIsDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setValue('file', e.dataTransfer.files[0]);
+      const droppedFile = e.dataTransfer.files[0];
+      if (validateFileFile(droppedFile)) {
+        setValue('file', droppedFile);
+      }
     }
   };
 
@@ -223,18 +240,23 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                         Tarik & lepaskan file di sini, atau <span className="text-blue-600 font-medium hover:underline">pilih file</span>
                       </p>
                       <p className="text-xs text-gray-400 mt-1.5">
-                        Mendukung PDF, JPG, PNG (Max 10MB)
+                        Mendukung PDF, DOCS, JPG, PNG (Max 10MB)
                       </p>
                     </div>
 
                     <input
                       id="fileBerkas"
                       type="file"
-                      accept=".pdf,.png,.jpg,.jpeg"
+                      accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
                       disabled={isLoading}
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
-                          setValue('file', e.target.files[0]);
+                          const selectedFile = e.target.files[0];
+                          if (validateFileFile(selectedFile)) {
+                            setValue('file', selectedFile);
+                          } else {
+                            e.target.value = "";
+                          }
                         }
                       }}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"

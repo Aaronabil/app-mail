@@ -119,6 +119,19 @@ public class SuratMasukService {
         surat = repository.save(surat);
 
         if (file != null && !file.isEmpty()) {
+            String contentType = file.getContentType();
+            java.util.List<String> allowedTypes = java.util.Arrays.asList(
+                "application/pdf", 
+                "application/msword", 
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+                "image/jpeg", 
+                "image/png"
+            );
+
+            if (contentType == null || !allowedTypes.contains(contentType)) {
+                throw new IllegalArgumentException("Format file tidak didukung! Hanya boleh PDF, DOCS, JPG, atau PNG.");
+            }
+
             try {
                 String storagePath = fileStorageService.storeFile(file, "surat-masuk/" + surat.getId());
                 surat.setFilePath(storagePath);
@@ -154,6 +167,19 @@ public class SuratMasukService {
         surat.setStatus(request.getStatus());
 
         if (file != null && !file.isEmpty()) {
+            String contentType = file.getContentType();
+            java.util.List<String> allowedTypes = java.util.Arrays.asList(
+                "application/pdf", 
+                "application/msword", 
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+                "image/jpeg", 
+                "image/png"
+            );
+
+            if (contentType == null || !allowedTypes.contains(contentType)) {
+                throw new IllegalArgumentException("Format file tidak didukung! Hanya boleh PDF, DOCS, JPG, atau PNG.");
+            }
+
             try {
                 String storagePath = fileStorageService.storeFile(file, "surat-masuk/" + id);
                 surat.setFilePath(storagePath);
