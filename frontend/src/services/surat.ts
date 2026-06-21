@@ -56,8 +56,8 @@ export const suratService = {
     await api.post('/surat-masuk/batch-delete', ids);
   },
 
-  getSuratKeluar: async (params?: FilterParams): Promise<SuratKeluar[]> => {
-    const response = await api.get<SuratKeluar[]>('/surat-keluar', { params });
+  getSuratKeluar: async (params?: FilterParams & { page?: number; size?: number }): Promise<PaginatedResponse<SuratKeluar>> => {
+    const response = await api.get<PaginatedResponse<SuratKeluar>>('/surat-keluar', { params });
     return response.data;
   },
 
