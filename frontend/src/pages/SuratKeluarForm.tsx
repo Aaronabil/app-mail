@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -88,23 +89,31 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
     }
   }, [surat, reset, isEditMode]);
 
-  const createMutation = useMutation({
-    mutationFn: suratService.createSuratKeluar,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surat-keluar'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      onClose();
-    },
-  });
+const createMutation = useMutation({
+  mutationFn: suratService.createSuratKeluar,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['surat-keluar'] });
+    queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    toast.success('Surat keluar berhasil ditambahkan');
+    onClose();
+  },
+  onError: () => {
+    toast.error('Gagal menambahkan surat keluar');
+  },
+});
 
-  const updateMutation = useMutation({
-    mutationFn: (data: FormData) => suratService.updateSuratKeluar(id!, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['surat-keluar'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      onClose();
-    },
-  });
+const updateMutation = useMutation({
+  mutationFn: (data: FormData) => suratService.updateSuratKeluar(id!, data),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['surat-keluar'] });
+    queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    toast.success('Surat keluar berhasil diperbarui');
+    onClose();
+  },
+  onError: () => {
+    toast.error('Gagal memperbarui surat keluar');
+  },
+});
 
   const uploadAttachment = async (suratId: number) => {
     if (!selectedFile) return;
@@ -117,6 +126,35 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
       setSelectedFile(null);
     }
   };
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+const ALLOWED_TYPES = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'application/msword', // .doc
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+];
+
+const ALLOWED_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.doc', '.docx'];
+
+const validateFile = (file: File): boolean => {
+  const fileName = file.name.toLowerCase();
+  const hasValidExtension = ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
+  const hasValidType = ALLOWED_TYPES.includes(file.type);
+
+  if (!hasValidType && !hasValidExtension) {
+    toast.error('Format file tidak didukung. Gunakan PDF, JPG, PNG, DOC, atau DOCX');
+    return false;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    toast.error('Ukuran file maksimal 10MB');
+    return false;
+  }
+
+  return true;
+};
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -128,17 +166,18 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragActive(false);
+const handleDrop = (e: React.DragEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  setIsDragActive(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setValue('nomorSurat', e.dataTransfer.files[0].name);
-      setSelectedFile(e.dataTransfer.files[0]);
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    const file = e.dataTransfer.files[0];
+    if (validateFile(file)) {
+      setSelectedFile(file);
     }
-  };
-
+  }
+};
   const onSubmit = async (data: FormData) => {
     try {
       const result = isEditMode
@@ -268,22 +307,27 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
                         Tarik & lepaskan file di sini, atau <span className="text-blue-600 font-medium hover:underline">pilih file</span>
                       </p>
                       <p className="text-xs text-gray-400 mt-1.5">
-                        Mendukung PDF, JPG, PNG (Max 10MB)
+                         Mendukung PDF, DOCS, JPG, PNG (Max 10MB)
                       </p>
                     </div>
 
-                    <input
-                      id="fileBerkas"
-                      type="file"
-                      accept=".pdf,.png,.jpg,.jpeg"
-                      disabled={isLoading}
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          setSelectedFile(e.target.files[0]);
-                        }
-                      }}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                    />
+                      <input
+                        id="fileBerkas"
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                        disabled={isLoading}
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            if (validateFile(file)) {
+                              setSelectedFile(file);
+                            } else {
+                              e.target.value = "";
+                            }
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                      />
                   </div>
 
                   {selectedFile && (
