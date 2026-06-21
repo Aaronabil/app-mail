@@ -90,12 +90,6 @@ public class SuratMasukController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/batch-delete")
-    public ResponseEntity<Void> batchDelete(@RequestBody List<Long> ids) {
-        service.batchDelete(ids);
-        return ResponseEntity.noContent().build();
-    }
-
     @DeleteMapping("/bulk")
     public ResponseEntity<?> deleteMultipleSurat(@RequestBody List<Long> ids) {
         service.batchDelete(ids);
