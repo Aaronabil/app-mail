@@ -5,7 +5,6 @@ import com.aplikasiberkas.dto.SuratKeluarResponse;
 import com.aplikasiberkas.entity.SuratKeluar;
 import com.aplikasiberkas.entity.User;
 import com.aplikasiberkas.repository.SuratKeluarRepository;
-import com.aplikasiberkas.service.FileStorageService;
 import com.aplikasiberkas.util.NomorSuratGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;

@@ -15,6 +15,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -100,7 +101,7 @@ public class SuratMasukService {
     }
 
     @Transactional
-    public SuratMasukResponse create(SuratMasukRequest request, org.springframework.web.multipart.MultipartFile file, User user) {
+    public SuratMasukResponse create(SuratMasukRequest request, MultipartFile file, User user) {
         SuratMasuk surat = new SuratMasuk();
 
         if (request.getNomorSurat() == null || request.getNomorSurat().isEmpty()) {
@@ -119,6 +120,8 @@ public class SuratMasukService {
         surat = repository.save(surat);
 
         if (file != null && !file.isEmpty()) {
+            validateFileType(file);
+
             try {
                 String storagePath = fileStorageService.storeFile(file, "surat-masuk/" + surat.getId());
                 surat.setFilePath(storagePath);
@@ -140,7 +143,7 @@ public class SuratMasukService {
     }
 
     @Transactional
-    public SuratMasukResponse update(Long id, SuratMasukRequest request, org.springframework.web.multipart.MultipartFile file) {
+    public SuratMasukResponse update(Long id, SuratMasukRequest request, MultipartFile file) {
         SuratMasuk surat = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Surat not found"));
 
@@ -154,6 +157,8 @@ public class SuratMasukService {
         surat.setStatus(request.getStatus());
 
         if (file != null && !file.isEmpty()) {
+            validateFileType(file);
+
             try {
                 String storagePath = fileStorageService.storeFile(file, "surat-masuk/" + id);
                 surat.setFilePath(storagePath);
@@ -190,6 +195,36 @@ public class SuratMasukService {
     @Transactional
     public void batchDelete(List<Long> ids) {
         repository.deleteAllById(ids);
+    }
+
+    private void validateFileType(MultipartFile file) {
+        String contentType = file.getContentType();
+        String originalFilename = file.getOriginalFilename();
+
+        // 1. Validasi Content-Type Header
+        List<String> allowedContentTypes = java.util.Arrays.asList(
+            "application/pdf", 
+            "application/msword", 
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+            "image/jpeg", 
+            "image/png"
+        );
+
+        if (contentType == null || !allowedContentTypes.contains(contentType)) {
+            throw new IllegalArgumentException("Format file tidak didukung! Hanya boleh PDF, DOCS, JPG, atau PNG.");
+        }
+
+        // 2. Validasi Ekstensi File Tambahan (Mencegah Content-Type Spoofing)
+        if (originalFilename == null || !originalFilename.contains(".")) {
+            throw new IllegalArgumentException("Berkas tidak valid atau tidak memiliki ekstensi!");
+        }
+
+        String extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+        List<String> allowedExtensions = java.util.Arrays.asList(".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png");
+
+        if (!allowedExtensions.contains(extension)) {
+            throw new IllegalArgumentException("Ekstensi file '" + extension + "' tidak diizinkan!");
+        }
     }
 
     private SuratMasukResponse toResponse(SuratMasuk surat) {
