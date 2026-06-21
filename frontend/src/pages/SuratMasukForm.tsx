@@ -94,7 +94,7 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
     },
   });
 
-  const validateFileFile = (file: File): boolean => {
+  const validateFile = (file: File): boolean => {
     if (file.size > 10 * 1024 * 1024) {
       toast.error("Ukuran file terlalu besar! Maksimal 10MB.");
       return false;
@@ -145,7 +145,7 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0];
-      if (validateFileFile(droppedFile)) {
+      if (validateFile(droppedFile)) {
         setValue('file', droppedFile);
       }
     }
@@ -252,7 +252,7 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
                           const selectedFile = e.target.files[0];
-                          if (validateFileFile(selectedFile)) {
+                          if (validateFile(selectedFile)) {
                             setValue('file', selectedFile);
                           } else {
                             e.target.value = "";

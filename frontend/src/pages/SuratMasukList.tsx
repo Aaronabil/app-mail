@@ -15,7 +15,6 @@ import {
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
@@ -82,7 +81,6 @@ export function SuratMasukList() {
       queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
       setSelectedIds([]);
       setIsBatchDelete(false);
-      setDeleteTargetId(null);
       toast.success('Semua surat terpilih berhasil dihapus');
     },
     onError: (error: any) => {
@@ -191,7 +189,6 @@ export function SuratMasukList() {
             variant="destructive" 
             onClick={() => {
               setIsBatchDelete(true);
-              setDeleteTargetId(selectedIds[0]);
             }}
             className="h-10 px-4 font-medium animate-in fade-in zoom-in-95 duration-150"
           >
@@ -336,7 +333,7 @@ export function SuratMasukList() {
       </div>
 
       <AlertDialog 
-        open={deleteTargetId !== null} 
+        open={deleteTargetId !== null || isBatchDelete} 
         onOpenChange={(open) => { 
           if (!open) {
             setDeleteTargetId(null);
@@ -345,16 +342,14 @@ export function SuratMasukList() {
         }}
       >
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {isBatchDelete ? `Hapus ${selectedIds.length} Surat Masuk Terpilih?` : 'Hapus Surat Masuk?'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Data surat beserta berkas lampirannya akan dihapus secara permanen dari server.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+          <AlertDialogTitle>
+            {isBatchDelete ? `Hapus ${selectedIds.length} Surat Masuk Terpilih?` : 'Hapus Surat Masuk?'}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Tindakan ini tidak dapat dibatalkan. Data surat beserta berkas lampirannya akan dihapus secara permanen dari server.
+          </AlertDialogDescription>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsBatchDelete(false)}>Batal</AlertDialogCancel>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction 
               onClick={() => { 
                 if (isBatchDelete) {
