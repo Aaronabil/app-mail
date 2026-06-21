@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { suratService } from '@/services/surat';
 import { Button } from '@/components/ui/button';
@@ -8,10 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Download, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 
-export function SuratKeluarDetail() {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const suratId = Number(id);
+interface SuratKeluarDetailProps {
+  id: number;
+  onClose: () => void;
+}
+
+export function SuratKeluarDetail({ id, onClose }: SuratKeluarDetailProps) {
+  const suratId = id;
 
   const { data: surat, isLoading, isError } = useQuery({
     queryKey: ['surat-keluar', suratId],
@@ -45,7 +47,7 @@ export function SuratKeluarDetail() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Button variant="ghost" onClick={() => navigate('/surat-keluar')}>
+        <Button variant="ghost" onClick={onClose}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
         </Button>
         <div className="rounded-2xl border p-8">Memuat detail surat...</div>
@@ -56,7 +58,7 @@ export function SuratKeluarDetail() {
   if (isError || !surat) {
     return (
       <div className="space-y-6">
-        <Button variant="ghost" onClick={() => navigate('/surat-keluar')}>
+        <Button variant="ghost" onClick={onClose}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
         </Button>
         <div className="rounded-2xl border p-8 text-center text-sm text-red-600">
@@ -77,7 +79,7 @@ export function SuratKeluarDetail() {
           <p className="text-sm text-muted-foreground">Detail Surat Keluar (read only)</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => navigate('/surat-keluar')}>
+          <Button variant="outline" onClick={onClose}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
           </Button>
           <Button onClick={handleExportPdf}>

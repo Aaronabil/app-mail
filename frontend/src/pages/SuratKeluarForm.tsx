@@ -221,6 +221,15 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
+                        <Label className="text-sm font-medium text-gray-400">Pengirim</Label>
+                        <Input 
+                          placeholder="Internal / Logistik (Auto)" 
+                          disabled 
+                          value="Internal / Logistik (Auto)"
+                          className="bg-gray-50 border-gray-200 text-gray-400 h-11 cursor-not-allowed"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
                         <Label htmlFor="penerima" className="text-sm font-medium text-gray-600">Penerima</Label>
                         <Input 
                           id="penerima" 
@@ -234,15 +243,7 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
                         )}
                       </div>
 
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium text-gray-400">Pengirim</Label>
-                        <Input 
-                          placeholder="Internal / Logistik (Auto)" 
-                          disabled 
-                          value="Internal / Logistik (Auto)"
-                          className="bg-gray-50 border-gray-200 text-gray-400 h-11 cursor-not-allowed"
-                        />
-                      </div>
+
                     </div>
                   </div>
                 </div>
@@ -370,20 +371,14 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
-              <Button
-                type="submit"
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+      
+              <Button 
+                type="submit" 
                 disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700 font-medium"
+                className="bg-blue-600 hover:bg-blue-700 text-white h-11 px-8 font-medium rounded-lg shadow-sm shadow-blue-500/10 min-w-[100px]"
               >
-                {uploadingAttachment
-                  ? 'Mengunggah lampiran...'
-                  : id
-                  ? 'Update Surat'
-                  : 'Simpan Surat'}
-              </Button>
-              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading} className="font-medium">
-                Batal
+                {isLoading ? 'Memproses...' : id ? 'Update' : 'Simpan'}
               </Button>
             </div>
           </form>
