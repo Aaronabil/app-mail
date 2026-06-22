@@ -31,16 +31,19 @@ export const suratService = {
   },
 
   createSuratMasuk: async (data: any): Promise<SuratMasuk> => {
-    const response = await api.post<SuratMasuk>('/surat-masuk', data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await api.post<SuratMasuk>('/surat-masuk', data);
     return response.data;
   },
 
   updateSuratMasuk: async (id: number, data: any): Promise<SuratMasuk> => {
-    const response = await api.put<SuratMasuk>(`/surat-masuk/${id}`, data, {
+    const response = await api.put<SuratMasuk>(`/surat-masuk/${id}`, data);
+    return response.data;
+  },
+
+  uploadSuratMasukAttachment: async (id: number, file: File): Promise<SuratMasuk> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<SuratMasuk>(`/surat-masuk/${id}/attachment`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -79,7 +82,11 @@ export const suratService = {
   uploadSuratKeluarAttachment: async (id: number, file: File): Promise<SuratKeluar> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await api.post<SuratKeluar>(`/surat-keluar/${id}/attachment`, formData);
+    const response = await api.post<SuratKeluar>(`/surat-keluar/${id}/attachment`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
@@ -128,13 +135,12 @@ export const suratService = {
       responseType: 'blob',
     });
     return response.data;
-  
-    
   },
+
   downloadSuratKeluarAttachment: async (id: number): Promise<Blob> => {
-  const response = await api.get(`/surat-keluar/${id}/attachment`, {
-    responseType: 'blob',
-  });
-  return response.data;
-},
+    const response = await api.get(`/surat-keluar/${id}/attachment`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };

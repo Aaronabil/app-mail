@@ -19,7 +19,6 @@ const schema = z.object({
   perihal: z.string().min(1, 'Perihal wajib diisi'),
   isiSingkat: z.string().optional(),
   status: z.string().default('RECEIVED'),
-  file: z.any().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -33,27 +32,36 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
   const queryClient = useQueryClient();
   const [isDragActive, setIsDragActive] = useState(false);
 
-  const { data: surat } = useQuery({
+  const isEditMode = id != null;
+  const { data: surat, isLoading: isSuratLoading } = useQuery({
     queryKey: ['surat-surat-masuk', id],
     queryFn: () => suratService.getSuratMasukById(id!),
-    enabled: !!id,
+    enabled: isEditMode,
   });
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [existingFileName, setExistingFileName] = useState<string | null>(null);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-    setValue,
-    watch,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      status: 'RECEIVED'
-    }
+      nomorSurat: '',
+      tanggal: '',
+      pengirim: '',
+      perihal: '',
+      isiSingkat: '',
+      status: 'RECEIVED',
+    },
   });
 
-  const currentFile = watch('file');
+  const getFileName = (path: string | undefined | null) =>
+    path?.split(/[/\\]/).pop() ?? null;
 
   useEffect(() => {
     if (surat) {
@@ -65,67 +73,86 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
         isiSingkat: surat.isiSingkat || '',
         status: surat.status,
       });
+    
+      setExistingFileName(getFileName(surat.filePath || surat.namaFile));
+      setSelectedFile(null);
+    } else if (!isEditMode) {
+      reset({
+        nomorSurat: '',
+        tanggal: '',
+        pengirim: '',
+        perihal: '',
+        isiSingkat: '',
+        status: 'RECEIVED',
+      });
+      setExistingFileName(null);
+      setSelectedFile(null);
     }
-  }, [surat, reset]);
+  }, [surat, reset, isEditMode]);
 
   const createMutation = useMutation({
-    mutationFn: (formData: any) => suratService.createSuratMasuk(formData),
+    mutationFn: (data: FormData) => suratService.createSuratMasuk(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast.success('Surat masuk berhasil disimpan');
-      onClose();
+      toast.success('Surat masuk berhasil ditambahkan');
     },
     onError: (error: any) => {
-      toast.error('Gagal menyimpan surat masuk: ' + (error?.response?.data?.message || error?.message || 'Terjadi kesalahan'));
+      toast.error('Gagal menambahkan surat masuk: ' + (error?.response?.data?.message || 'Terjadi kesalahan'));
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: (formData: any) => suratService.updateSuratMasuk(id!, formData),
+    mutationFn: (data: FormData) => suratService.updateSuratMasuk(id!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Surat masuk berhasil diperbarui');
-      onClose();
     },
     onError: (error: any) => {
-      toast.error('Gagal mengupdate surat masuk: ' + (error?.response?.data?.message || error?.message || 'Terjadi kesalahan'));
+      toast.error('Gagal memperbarui surat masuk: ' + (error?.response?.data?.message || 'Terjadi kesalahan'));
     },
   });
 
+  const uploadAttachment = async (suratId: number) => {
+    if (!selectedFile) return;
+    setUploadingAttachment(true);
+    try {
+      // Pastikan fungsi uploadSuratMasukAttachment sudah tersedia di suratService kamu
+      const updated = await suratService.uploadSuratMasukAttachment(suratId, selectedFile);
+      setExistingFileName(getFileName(updated.filePath || updated.namaFile) ?? selectedFile.name);
+    } catch (error) {
+      toast.error('Gagal mengunggah lampiran berkas');
+    } {
+      setUploadingAttachment(false);
+      setSelectedFile(null);
+    }
+  };
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const ALLOWED_TYPES = [
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ];
+  const ALLOWED_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.doc', '.docx'];
+
   const validateFile = (file: File): boolean => {
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Ukuran file terlalu besar! Maksimal 10MB.");
+    const fileName = file.name.toLowerCase();
+    const hasValidExtension = ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
+    const hasValidType = ALLOWED_TYPES.includes(file.type);
+
+    if (!hasValidType && !hasValidExtension) {
+      toast.error('Format file tidak didukung. Gunakan PDF, JPG, PNG, DOC, atau DOCX');
       return false;
     }
-    const allowedExtensions = ['pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx'];
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-      toast.error("Format file tidak didukung! Hanya boleh PDF, DOCS, JPG, atau PNG.");
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('Ukuran file maksimal 10MB');
       return false;
     }
     return true;
-  };
-
-  const onSubmit = (data: FormData) => {
-    const { file, ...suratData } = data;
-    const formData = new FormData();
-
-    formData.append(
-      "request",
-      new Blob([JSON.stringify(suratData)], { type: "application/json" })
-    );
-
-    if (file) {
-      formData.append("file", file);
-    }
-
-    if (id) {
-      updateMutation.mutate(formData);
-    } else {
-      createMutation.mutate(formData);
-    }
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -144,14 +171,54 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
     setIsDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0];
-      if (validateFile(droppedFile)) {
-        setValue('file', droppedFile);
+      const file = e.dataTransfer.files[0];
+      if (validateFile(file)) {
+        setSelectedFile(file);
       }
     }
   };
 
-  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const onSubmit = async (data: FormData) => {
+    try {
+      const result = isEditMode
+        ? await updateMutation.mutateAsync(data)
+        : await createMutation.mutateAsync(data);
+
+      const suratId = id ?? result.id;
+      if (selectedFile) {
+        await uploadAttachment(suratId);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
+      queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk', suratId] });
+      onClose();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (isEditMode && isSuratLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-gray-100">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Edit Surat Masuk</h1>
+            <p className="text-sm text-muted-foreground">Memuat data...</p>
+          </div>
+        </div>
+        <Card className="border border-gray-100 shadow-sm bg-white rounded-xl overflow-hidden">
+          <CardContent className="p-8">
+            <div className="h-72 rounded-lg bg-slate-100" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const isLoading = createMutation.isPending || updateMutation.isPending || uploadingAttachment;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-2">
@@ -251,9 +318,9 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                       disabled={isLoading}
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
-                          const selectedFile = e.target.files[0];
-                          if (validateFile(selectedFile)) {
-                            setValue('file', selectedFile);
+                          const file = e.target.files[0];
+                          if (validateFile(file)) {
+                            setSelectedFile(file);
                           } else {
                             e.target.value = "";
                           }
@@ -263,11 +330,19 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                     />
                   </div>
 
-                  {currentFile && (
+                  {selectedFile && (
                     <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg animate-in fade-in duration-200">
                       <p className="text-xs text-emerald-700 font-medium flex items-center gap-2">
                         <span className="bg-emerald-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">✓</span> 
-                        File siap diunggah: <span className="font-bold underline">{currentFile.name}</span>
+                        File siap diunggah: <span className="font-bold underline">{selectedFile.name}</span>
+                      </p>
+                    </div>
+                  )}
+
+                  {existingFileName && !selectedFile && (
+                    <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-xs text-blue-700 font-medium">
+                        File saat ini: <a href={`/api/surat-masuk/${id}/attachment`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-bold">{existingFileName}</a>
                       </p>
                     </div>
                   )}
