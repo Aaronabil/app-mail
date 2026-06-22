@@ -37,17 +37,19 @@ export function SuratKeluarList() {
   const queryClient = useQueryClient();
   const [dateFilter, setDateFilter] = useState('all');
 
-  const { data: allSurat, isLoading } = useQuery({
-    queryKey: ['surat-keluar', search, status, sort, dateFilter],
-    queryFn: () =>
-      suratService.getSuratKeluar({
-        search: search || undefined,
-        status: status || undefined,
-        sortBy: 'tanggal',
-        sortDir: sort,
-        ...getDateRange(dateFilter),
-      }),
-  });
+  const { data: suratData, isLoading } = useQuery({
+      queryKey: ['surat-keluar', search, status, sort, dateFilter, page],
+      queryFn: () =>
+        suratService.getSuratKeluar({
+          search: search || undefined,
+          status: status || undefined,
+          sortBy: 'tanggal',
+          sortDir: sort,
+          page,
+          size: pageSize,
+          ...getDateRange(dateFilter),
+        }),
+    });
 
   const deleteMutation = useMutation({
     mutationFn: suratService.deleteSuratKeluar,
@@ -73,11 +75,10 @@ export function SuratKeluarList() {
     }
   };
   
-  const fullList = Array.isArray(allSurat) ? allSurat : [];
-  const totalElements = fullList.length;
-  const totalPages = Math.max(1, Math.ceil(totalElements / pageSize));
-  const currentPage = page;
-  const suratList = fullList.slice(page * pageSize, (page + 1) * pageSize);
+  const suratList = suratData?.content || [];
+  const totalElements = suratData?.totalElements || 0;
+  const totalPages = suratData?.totalPages || 0;
+  const currentPage = suratData?.currentPage || 0;
 
   const startItem = totalElements === 0 ? 0 : currentPage * pageSize + 1;
   const endItem = Math.min((currentPage + 1) * pageSize, totalElements);
