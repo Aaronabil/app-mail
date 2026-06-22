@@ -154,6 +154,8 @@ public class SuratKeluarService {
         SuratKeluar surat = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Surat not found"));
 
+        validateFileType(file);
+
         String storagePath = fileStorageService.storeFile(file, "surat-keluar/" + id);
         surat.setFilePath(storagePath);
         SuratKeluarResponse updated = toResponse(repository.save(surat));
@@ -183,6 +185,39 @@ public class SuratKeluarService {
     @Transactional
     public void batchDelete(List<Long> ids) {
         repository.deleteAllById(ids);
+    }
+
+    private void validateFileType(MultipartFile file) {
+        String contentType = file.getContentType();
+        String originalFilename = file.getOriginalFilename();
+
+        List<String> allowedContentTypes = java.util.Arrays.asList(
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "image/jpeg",
+            "image/png"
+        );
+
+        if (contentType == null || !allowedContentTypes.contains(contentType)) {
+            throw new IllegalArgumentException("Format file tidak didukung! Hanya boleh PDF, DOCS, JPG, atau PNG.");
+        }
+
+        if (originalFilename == null || !originalFilename.contains(".")) {
+            throw new IllegalArgumentException("Berkas tidak valid atau tidak memiliki ekstensi!");
+        }
+
+        String extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+        List<String> allowedExtensions = java.util.Arrays.asList(".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png");
+
+        if (!allowedExtensions.contains(extension)) {
+            throw new IllegalArgumentException("Ekstensi file '" + extension + "' tidak diizinkan!");
+        }
+
+        long maxSize = 10 * 1024 * 1024;
+        if (file.getSize() > maxSize) {
+            throw new IllegalArgumentException("Ukuran file maksimal 10MB!");
+        }
     }
 
     private SuratKeluarResponse toResponse(SuratKeluar surat) {
