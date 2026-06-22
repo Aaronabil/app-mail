@@ -36,7 +36,7 @@ function getDateRange(filter: string) {
 export function SuratMasukList() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
-  const [sort, setSort] = useState<'ASC' | 'DESC'>('ASC');
+  const [sort, setSort] = useState<'ASC' | 'DESC'>('DESC');
   const [page, setPage] = useState(0);
   const pageSize = 5;
   const [showForm, setShowForm] = useState(false);
