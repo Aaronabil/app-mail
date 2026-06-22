@@ -32,22 +32,31 @@ export function SuratKeluarDetail({ id, onClose }: SuratKeluarDetailProps) {
     }
   };
 
-  const handleDownloadAttachment = async () => {
-    try {
-      const dataSurat = surat as any;
-      const fileName = dataSurat.filePath?.split(/[/\\]/).pop() || 'lampiran_surat_keluar.pdf';
-      const blob = await suratService.downloadOriginalFile(id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
-    } catch (err) {
-      console.error(err);
-    }
+const handleDownloadAttachment = async () => {
+  try {
+    const dataSurat = surat as any;
+    const fileName = dataSurat.filePath?.split(/[/\\]/).pop() || 'lampiran_surat_keluar.pdf';
+    const blob = await suratService.downloadSuratKeluarAttachment(id);
+    
+    console.log('blob:', blob);
+    console.log('blob type:', blob?.type);
+    console.log('blob size:', blob?.size);
+    console.log('is Blob instance:', blob instanceof Blob);
+    console.log('fileName:', fileName);
+    
+    const url = window.URL.createObjectURL(blob);
+    console.log('object URL:', url);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
+  } catch (err) {
+    console.error('ERROR:', err);
+  }
 };
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Memuat detail surat...</div>;
