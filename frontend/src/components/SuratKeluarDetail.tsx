@@ -32,23 +32,32 @@ export function SuratKeluarDetail({ id, onClose }: SuratKeluarDetailProps) {
     }
   };
 
-  const handleDownloadAttachment = async () => {
-    try {
-      const dataSurat = surat as any;
-      const fileName = dataSurat.namaFile || 'lampiran_surat_keluar.pdf';
-      const blob = await suratService.downloadOriginalFile(id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+const handleDownloadAttachment = async () => {
+  try {
+    const dataSurat = surat as any;
+    const fileName = dataSurat.filePath?.split(/[/\\]/).pop() || 'lampiran_surat_keluar.pdf';
+    const blob = await suratService.downloadSuratKeluarAttachment(id);
+    
+    console.log('blob:', blob);
+    console.log('blob type:', blob?.type);
+    console.log('blob size:', blob?.size);
+    console.log('is Blob instance:', blob instanceof Blob);
+    console.log('fileName:', fileName);
+    
+    const url = window.URL.createObjectURL(blob);
+    console.log('object URL:', url);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
+  } catch (err) {
+    console.error('ERROR:', err);
+  }
+};
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Memuat detail surat...</div>;
   if (error || !surat) return <div className="p-8 text-center text-red-500">Gagal memuat atau data surat tidak ditemukan.</div>;
@@ -65,7 +74,9 @@ export function SuratKeluarDetail({ id, onClose }: SuratKeluarDetailProps) {
   };
 
   const dataSurat = surat as any;
-
+  const attachmentFileName = dataSurat.filePath
+  ? dataSurat.filePath.split(/[/\\]/).pop()
+  : null;
   
   return (
     <div className="space-y-6">
@@ -124,14 +135,14 @@ export function SuratKeluarDetail({ id, onClose }: SuratKeluarDetailProps) {
 
         <div>
           <h3 className="text-xs font-bold uppercase text-gray-400 tracking-wider mb-3">Attachments</h3>
-          {dataSurat.namaFile || dataSurat.fileUrl || dataSurat.filePath ? (
+          {attachmentFileName ? (
             <div className="inline-flex items-center gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50 max-w-sm">
               <div className="p-2 bg-red-50 text-red-500 rounded-md">
                 <FileText className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-gray-800 truncate">
-                  {dataSurat.namaFile || 'Lampiran_Surat.pdf'}
+                  {attachmentFileName}
                 </p>
                 <p className="text-[10px] text-gray-400">File Lampiran Surat</p>
               </div>
@@ -142,7 +153,7 @@ export function SuratKeluarDetail({ id, onClose }: SuratKeluarDetailProps) {
           ) : (
             <p className="text-sm text-gray-400 italic">Tidak ada file lampiran.</p>
           )}
-        </div>
+      </div>
       </div>
     </div>
   );

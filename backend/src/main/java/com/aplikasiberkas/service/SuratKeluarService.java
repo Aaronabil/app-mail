@@ -5,8 +5,12 @@ import com.aplikasiberkas.dto.SuratKeluarResponse;
 import com.aplikasiberkas.entity.SuratKeluar;
 import com.aplikasiberkas.entity.User;
 import com.aplikasiberkas.repository.SuratKeluarRepository;
+import com.aplikasiberkas.service.FileStorageService;
 import com.aplikasiberkas.util.NomorSuratGenerator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,8 +41,8 @@ public class SuratKeluarService {
     }
 
     @Transactional(readOnly = true)
-    public List<SuratKeluarResponse> getAll(String status, LocalDate startDate,
-            LocalDate endDate, String search, String sortBy, String sortDir) {
+    public Map<String, Object> getAll(String status, LocalDate startDate,
+            LocalDate endDate, String search, String sortBy, String sortDir, int page, int size) {
 
         Specification<SuratKeluar> spec = Specification.where(null);
 
@@ -60,12 +65,27 @@ public class SuratKeluarService {
                 ));
         }
 
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDir != null ? sortDir : "DESC"),
-                sortBy != null ? sortBy : "tanggal");
+        Sort.Direction direction = Sort.Direction.fromString(sortDir != null ? sortDir : "DESC");
+        String sortField = sortBy != null ? sortBy : "tanggal";
+        Sort sort = Sort.by(
+                new Sort.Order(direction, sortField),
+                new Sort.Order(direction, "id"));
 
-        return repository.findAll(spec, sort).stream()
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<SuratKeluar> pageResult = repository.findAll(spec, pageable);
+
+        List<SuratKeluarResponse> content = pageResult.getContent().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("content", content);
+        response.put("totalElements", pageResult.getTotalElements());
+        response.put("totalPages", pageResult.getTotalPages());
+        response.put("currentPage", pageResult.getNumber());
+        response.put("size", pageResult.getSize());
+
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -134,6 +154,8 @@ public class SuratKeluarService {
         SuratKeluar surat = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Surat not found"));
 
+        validateFileType(file);
+
         String storagePath = fileStorageService.storeFile(file, "surat-keluar/" + id);
         surat.setFilePath(storagePath);
         SuratKeluarResponse updated = toResponse(repository.save(surat));
@@ -163,6 +185,39 @@ public class SuratKeluarService {
     @Transactional
     public void batchDelete(List<Long> ids) {
         repository.deleteAllById(ids);
+    }
+
+    private void validateFileType(MultipartFile file) {
+        String contentType = file.getContentType();
+        String originalFilename = file.getOriginalFilename();
+
+        List<String> allowedContentTypes = java.util.Arrays.asList(
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "image/jpeg",
+            "image/png"
+        );
+
+        if (contentType == null || !allowedContentTypes.contains(contentType)) {
+            throw new IllegalArgumentException("Format file tidak didukung! Hanya boleh PDF, DOCS, JPG, atau PNG.");
+        }
+
+        if (originalFilename == null || !originalFilename.contains(".")) {
+            throw new IllegalArgumentException("Berkas tidak valid atau tidak memiliki ekstensi!");
+        }
+
+        String extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+        List<String> allowedExtensions = java.util.Arrays.asList(".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png");
+
+        if (!allowedExtensions.contains(extension)) {
+            throw new IllegalArgumentException("Ekstensi file '" + extension + "' tidak diizinkan!");
+        }
+
+        long maxSize = 10 * 1024 * 1024;
+        if (file.getSize() > maxSize) {
+            throw new IllegalArgumentException("Ukuran file maksimal 10MB!");
+        }
     }
 
     private SuratKeluarResponse toResponse(SuratKeluar surat) {

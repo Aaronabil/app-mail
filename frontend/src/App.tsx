@@ -5,7 +5,6 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { SuratMasukList } from './pages/SuratMasukList';
 import { SuratKeluarList } from './pages/SuratKeluarList';
-import { SuratKeluarDetail } from './pages/SuratKeluarDetail';
 import { AuditLog } from './pages/AuditLog';
 import { LoginPage } from './pages/LoginPage';
 
@@ -36,14 +35,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout><SuratKeluarList /></Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/surat-keluar/:id"
-            element={
-              <ProtectedRoute>
-                <Layout><SuratKeluarDetail /></Layout>
               </ProtectedRoute>
             }
           />

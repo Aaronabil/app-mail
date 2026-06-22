@@ -71,13 +71,13 @@ export function Dashboard() {
     queryFn: () => suratService.getSuratKeluar({ sortBy: 'createdAt', sortDir: 'DESC' }),
   });
 
-  const recentActivity = [
-    ...(suratMasukData?.content || []).map((s: any) => ({ ...s, type: 'masuk' })),
-    ...(suratKeluarData || []).map((s: any) => ({ ...s, type: 'keluar' })),
-  ]
-    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
-
+const recentActivity = [
+  ...(suratMasukData?.content || []).map((s: any) => ({ ...s, type: 'masuk' })),
+  ...(suratKeluarData?.content || []).map((s: any) => ({ ...s, type: 'keluar' })),
+]
+  .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  .slice(0, 5);
+  
   const barData =
     chartData?.months.map((m) => ({
       month: m.month,

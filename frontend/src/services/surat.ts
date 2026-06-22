@@ -128,5 +128,13 @@ export const suratService = {
       responseType: 'blob',
     });
     return response.data;
+  
+    
   },
+  downloadSuratKeluarAttachment: async (id: number): Promise<Blob> => {
+  const response = await api.get(`/surat-keluar/${id}/attachment`, {
+    responseType: 'blob',
+  });
+  return response.data;
+},
 };
