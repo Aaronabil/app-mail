@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { Toaster } from 'sonner';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { SuratMasukList } from './pages/SuratMasukList';
@@ -13,7 +12,6 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Toaster position="top-right" richColors />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route

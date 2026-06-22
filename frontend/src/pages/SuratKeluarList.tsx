@@ -28,7 +28,7 @@ export function SuratKeluarList() {
   const [status, setStatus] = useState('');
   const [sort, setSort] = useState<'ASC' | 'DESC'>('DESC');
   const [page, setPage] = useState(0);
-  const pageSize = 10;
+  const pageSize = 5;
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [viewId, setViewId] = useState<number | null>(null);
