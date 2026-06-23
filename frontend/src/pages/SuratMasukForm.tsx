@@ -41,7 +41,6 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [existingFileName, setExistingFileName] = useState<string | null>(null);
-  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   const {
     register,
@@ -74,7 +73,7 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
         status: surat.status,
       });
     
-      setExistingFileName(getFileName(surat.filePath || surat.namaFile));
+      setExistingFileName(surat.namaFile || getFileName(surat.filePath));
       setSelectedFile(null);
     } else if (!isEditMode) {
       reset({
@@ -91,11 +90,12 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
   }, [surat, reset, isEditMode]);
 
   const createMutation = useMutation({
-    mutationFn: (data: FormData) => suratService.createSuratMasuk(data),
+    mutationFn: (formData: any) => suratService.createSuratMasuk(formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Surat masuk berhasil ditambahkan');
+      onClose();
     },
     onError: (error: any) => {
       toast.error('Gagal menambahkan surat masuk: ' + (error?.response?.data?.message || 'Terjadi kesalahan'));
@@ -103,33 +103,19 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: FormData) => suratService.updateSuratMasuk(id!, data),
+    mutationFn: (formData: any) => suratService.updateSuratMasuk(id!, formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Surat masuk berhasil diperbarui');
+      onClose();
     },
     onError: (error: any) => {
       toast.error('Gagal memperbarui surat masuk: ' + (error?.response?.data?.message || 'Terjadi kesalahan'));
     },
   });
 
-  const uploadAttachment = async (suratId: number) => {
-    if (!selectedFile) return;
-    setUploadingAttachment(true);
-    try {
-      // Pastikan fungsi uploadSuratMasukAttachment sudah tersedia di suratService kamu
-      const updated = await suratService.uploadSuratMasukAttachment(suratId, selectedFile);
-      setExistingFileName(getFileName(updated.filePath || updated.namaFile) ?? selectedFile.name);
-    } catch (error) {
-      toast.error('Gagal mengunggah lampiran berkas');
-    } {
-      setUploadingAttachment(false);
-      setSelectedFile(null);
-    }
-  };
-
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
   const ALLOWED_TYPES = [
     'application/pdf',
     'image/png',
@@ -180,18 +166,22 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const result = isEditMode
-        ? await updateMutation.mutateAsync(data)
-        : await createMutation.mutateAsync(data);
+      const formDataToSend = new FormData();
+      
+      formDataToSend.append(
+        'request',
+        new Blob([JSON.stringify(data)], { type: 'application/json' })
+      );
 
-      const suratId = id ?? result.id;
       if (selectedFile) {
-        await uploadAttachment(suratId);
+        formDataToSend.append('file', selectedFile);
       }
 
-      queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk'] });
-      queryClient.invalidateQueries({ queryKey: ['surat-surat-masuk', suratId] });
-      onClose();
+      if (isEditMode) {
+        await updateMutation.mutateAsync(formDataToSend);
+      } else {
+        await createMutation.mutateAsync(formDataToSend);
+      }
     } catch (error) {
       console.error(error);
     }
@@ -218,7 +208,7 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
     );
   }
 
-  const isLoading = createMutation.isPending || updateMutation.isPending || uploadingAttachment;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-2">
@@ -342,7 +332,7 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
                   {existingFileName && !selectedFile && (
                     <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
                       <p className="text-xs text-blue-700 font-medium">
-                        File saat ini: <a href={`/api/surat-masuk/${id}/attachment`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-bold">{existingFileName}</a>
+                        File saat ini: <a href={`/api/surat-masuk/${id}/file`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-bold">{existingFileName}</a>
                       </p>
                     </div>
                   )}

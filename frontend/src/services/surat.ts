@@ -31,12 +31,20 @@ export const suratService = {
   },
 
   createSuratMasuk: async (data: any): Promise<SuratMasuk> => {
-    const response = await api.post<SuratMasuk>('/surat-masuk', data);
+    const response = await api.post<SuratMasuk>('/surat-masuk', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
   updateSuratMasuk: async (id: number, data: any): Promise<SuratMasuk> => {
-    const response = await api.put<SuratMasuk>(`/surat-masuk/${id}`, data);
+    const response = await api.put<SuratMasuk>(`/surat-masuk/${id}`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
@@ -56,7 +64,7 @@ export const suratService = {
   },
 
   batchDeleteSuratMasuk: async (ids: number[]): Promise<void> => {
-    await api.post('/surat-masuk/batch-delete', ids);
+    await api.delete('/surat-masuk/bulk', { data: ids });
   },
 
   getSuratKeluar: async (params?: FilterParams & { page?: number; size?: number }): Promise<PaginatedResponse<SuratKeluar>> => {
