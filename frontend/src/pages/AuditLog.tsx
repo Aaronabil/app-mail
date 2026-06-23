@@ -47,6 +47,45 @@ export function AuditLog() {
   const startItem = currentPage * pageSize + 1;
   const endItem = Math.min((currentPage + 1) * pageSize, totalElements);
 
+  const handleExportCsv = async () => {
+    const response = await auditService.getAuditLogs({
+      search: search || undefined,
+      action: action || undefined,
+      entityType: entityType || undefined,
+      page: 0,
+      size: 10000,
+    });
+
+    const rows = response.content.map((log) => ({
+      Waktu: format(new Date(log.timestamp), 'yyyy-MM-dd HH:mm:ss'),
+      Aksi: log.action,
+      Entitas: log.entityType,
+      'ID Entitas': log.entityLabel,
+      Oleh: log.actor,
+      Detail: log.details,
+    }));
+
+    const header = Object.keys(rows[0] || {}).join(',');
+    const csv = [
+      header,
+      ...rows.map((r) =>
+        Object.values(r)
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+          .join(',')
+      ),
+    ].join('\n');
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-log-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const getActionBadge = (actionValue: string) => {
     const styles: Record<string, string> = {
       CREATE: 'text-green-700 bg-green-50',
@@ -111,7 +150,7 @@ export function AuditLog() {
             </option>
           ))}
         </select>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-2" onClick={handleExportCsv}>
           <Download className="h-4 w-4 text-blue-600" />
           <span className="text-blue-600 text-sm font-medium">Export CSV</span>
         </Button>
