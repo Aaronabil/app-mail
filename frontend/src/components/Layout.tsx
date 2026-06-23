@@ -23,7 +23,7 @@ export function Layout({ children, title = 'Dashboard' }: LayoutProps) {
           <div className="flex items-center gap-4">
             <NotificationDropdown />
             <div className="flex items-center gap-2">
-              <UserCircle className="h-8 w-8 text-gray-400" />
+              <UserCircle className="h-6 w-6 text-gray-400" />
               <span className="text-sm font-medium text-gray-700">
                 {user?.fullName || 'Admin Profile'}
               </span>

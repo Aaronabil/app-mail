@@ -3,12 +3,12 @@ import { suratService } from '@/services/surat';
 import { format } from 'date-fns';
 import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart } from 'recharts';
 import {
-  FileText,
-  FileOutput,
   FileClock,
   Archive,
   TrendingUp,
   TrendingDown,
+  Inbox,
+  SendHorizontal
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -120,8 +120,8 @@ const recentActivity = [
       value: stats?.totalSuratMasuk || 0,
       change: '+12%',
       up: true,
-      icon: FileText,
-      iconBg: 'bg-blue-100',
+      icon: Inbox,
+      iconBg: '',
       iconColor: 'text-blue-600',
     },
     {
@@ -129,8 +129,8 @@ const recentActivity = [
       value: stats?.totalSuratKeluar || 0,
       change: '+5%',
       up: true,
-      icon: FileOutput,
-      iconBg: 'bg-blue-100',
+      icon: SendHorizontal,
+      iconBg: '',
       iconColor: 'text-blue-600',
     },
     {
@@ -139,7 +139,7 @@ const recentActivity = [
       change: '-2%',
       up: false,
       icon: FileClock,
-      iconBg: 'bg-red-100',
+      iconBg: '',
       iconColor: 'text-red-600',
     },
     {
@@ -148,7 +148,7 @@ const recentActivity = [
       change: '+5%',
       up: true,
       icon: Archive,
-      iconBg: 'bg-green-100',
+      iconBg: '',
       iconColor: 'text-green-600',
     },
   ];

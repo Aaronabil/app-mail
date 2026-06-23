@@ -1,26 +1,24 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
-  FileText,
-  FilePlus,
   ClipboardList,
   Settings,
-  HelpCircle,
-  Plus,
+  Mailbox,
+  Inbox,
+  SendHorizontal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
 const menuItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/surat-masuk', label: 'Surat Masuk', icon: FileText },
-  { path: '/surat-keluar', label: 'Surat Keluar', icon: FilePlus },
+  { path: '/surat-masuk', label: 'Surat Masuk', icon: Inbox },
+  { path: '/surat-keluar', label: 'Surat Keluar', icon: SendHorizontal },
   { path: '/audit-log', label: 'Audit Log', icon: ClipboardList },
 ];
 
 const bottomItems = [
   { path: '/settings', label: 'Settings', icon: Settings },
-  { path: '/support', label: 'Support', icon: HelpCircle },
 ];
 
 export function Sidebar() {
@@ -32,20 +30,11 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-sm">
-          A
+          <Mailbox className="h-5 w-5" />
         </div>
         <div>
           <h1 className="text-sm font-bold text-gray-900 leading-tight">Arsip Surat</h1>
-          <p className="text-[10px] text-gray-500 leading-tight">Technical Management</p>
         </div>
-      </div>
-
-      {/* Tombol Arsip Baru */}
-      <div className="px-4 mb-4">
-        <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-          <Plus className="h-4 w-4" />
-          Arsip Baru
-        </button>
       </div>
 
       {/* Menu Utama */}
