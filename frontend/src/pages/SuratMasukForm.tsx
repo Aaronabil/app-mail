@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { suratService } from '../services/surat';
+import { DatePicker } from '../components/ui/date-picker';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -47,6 +48,8 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -364,18 +367,13 @@ export function SuratMasukForm({ id, onClose }: SuratMasukFormProps) {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="tanggal" className="text-sm font-medium text-gray-600">Tanggal Surat</Label>
-                    <Input 
-                      id="tanggal" 
-                      type="date" 
-                      {...register('tanggal')} 
-                      className="bg-white border-gray-200 focus-visible:ring-blue-500 h-11"
+                    <DatePicker
+                      value={watch('tanggal')}
+                      onChange={(date) => setValue('tanggal', date || '')}
                       disabled={isLoading}
+                      error={errors.tanggal?.message}
                     />
-                    {errors.tanggal && (
-                      <p className="text-xs text-destructive">{errors.tanggal.message}</p>
-                    )}
                   </div>
-
                   <div className="space-y-1.5">
                     <Label htmlFor="status" className="text-sm font-medium text-gray-600">Status</Label>
                     <select

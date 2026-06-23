@@ -14,7 +14,7 @@ export function NotificationDropdown() {
     queryFn: async () => {
       const data = await suratService.getSuratMasuk({
         page: 0,
-        size: 4,
+        size: 3,
         sortBy: 'tanggal',
         sortDir: 'DESC',
       });

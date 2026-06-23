@@ -5,8 +5,6 @@ import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart } from 'recharts';
 import {
   FileClock,
   Archive,
-  TrendingUp,
-  TrendingDown,
   Inbox,
   SendHorizontal
 } from 'lucide-react';
@@ -118,8 +116,6 @@ const recentActivity = [
     {
       label: 'Total Surat Masuk',
       value: stats?.totalSuratMasuk || 0,
-      change: '+12%',
-      up: true,
       icon: Inbox,
       iconBg: '',
       iconColor: 'text-blue-600',
@@ -127,8 +123,6 @@ const recentActivity = [
     {
       label: 'Total Surat Keluar',
       value: stats?.totalSuratKeluar || 0,
-      change: '+5%',
-      up: true,
       icon: SendHorizontal,
       iconBg: '',
       iconColor: 'text-blue-600',
@@ -136,8 +130,6 @@ const recentActivity = [
     {
       label: 'Surat Draft',
       value: stats?.suratKeluarDraft || 0,
-      change: '-2%',
-      up: false,
       icon: FileClock,
       iconBg: '',
       iconColor: 'text-red-600',
@@ -145,8 +137,6 @@ const recentActivity = [
     {
       label: 'Surat Terarsip',
       value: (stats?.suratMasukArchived || 0) + (stats?.suratKeluarArchived || 0),
-      change: '+5%',
-      up: true,
       icon: Archive,
       iconBg: '',
       iconColor: 'text-green-600',
@@ -172,16 +162,6 @@ const recentActivity = [
                 <div className={`rounded-lg ${card.iconBg} p-2`}>
                   <Icon className={`h-4 w-4 ${card.iconColor}`} />
                 </div>
-              </div>
-              <div className="mt-3 flex items-center gap-1 text-xs">
-                {card.up ? (
-                  <TrendingUp className="h-3 w-3 text-green-500" />
-                ) : (
-                  <TrendingDown className="h-3 w-3 text-red-500" />
-                )}
-                <span className={card.up ? 'text-green-600' : 'text-red-600'}>
-                  {card.change}
-                </span>
               </div>
             </div>
           );
@@ -251,7 +231,6 @@ const recentActivity = [
           </CardContent>
           <div className="flex flex-col gap-2 px-6 pb-4 text-sm">
             <div className="flex items-center justify-center gap-2 font-medium">
-              <TrendingUp className="h-4 w-4 text-green-500" />
               <span>{totalPie} Total Surat</span>
             </div>
             <div className="flex flex-wrap justify-center gap-3">
