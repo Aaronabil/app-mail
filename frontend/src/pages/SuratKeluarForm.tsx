@@ -41,7 +41,7 @@ export function SuratKeluarForm({ id, onClose }: SuratKeluarFormProps) {
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [existingFileName, setExistingFileName] = useState<string | null>(null);
-  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [_uploadingAttachment, setUploadingAttachment] = useState(false);
 
   const {
     register,
