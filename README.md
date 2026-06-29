@@ -2,12 +2,20 @@
 
 Aplikasi manajemen surat masuk dan keluar berbasis web dengan Java Spring Boot (backend) dan React (frontend).
 
+## Anggota Kelompok
+
+| No | Nama | NIM |
+|----|------|-----|
+| 1 | Ahmad Muqarrobin | 242502040003 |
+| 2 | Alyssa Nurul Hidayat | 242502040081 |
+| 3 | Muhamad Nabil Faiz Amrullah | 242502040042 |
+
 ## Struktur Project
 
 ```
-.
-├── app-mail/   # Spring Boot backend
-└── app-mail/  # React frontend
+app-mail/
+├── backend/   # Spring Boot backend
+└── frontend/  # React frontend
 ```
 
 ## Tech Stack
@@ -96,6 +104,7 @@ cd app-mail/backend
 
 # Run
 mvn spring-boot:run
+```
 
 ### Frontend (Port 5173)
 
@@ -124,7 +133,7 @@ npm run preview
 createdb berkasdb
 ```
 
-2. Edit `aplikasi-berkas-backend/src/main/resources/application.properties`:
+2. Edit `app-mail/backend/src/main/resources/application.properties`:
 ```properties
 # Comment H2 config, uncomment PostgreSQL config
 spring.datasource.url=jdbc:postgresql://localhost:5432/berkasdb
